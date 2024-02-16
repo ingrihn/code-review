@@ -14,10 +14,17 @@
   "contributes": {
     "commands": [
       {
-        "command": "collabrate.helloWorld",
+        "command": "extension.showCommentSidebar",
         "title": "CollabRate"
       }
-    ]
+    ],
+      "menus": {
+        "editor/context": [{
+            "when": "resourceScheme == 'file'",
+            "command": "extension.showCommentSidebar",
+            "group": "1_modification"
+      }]
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
