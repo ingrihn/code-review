@@ -3,10 +3,35 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Webview</title>
+    <title>Legg inn kommentar</title>
+    <style>
+      body {
+        margin-left: 5em;
+        margin-right: 5em;
+      }
+
+      #commentBox {
+        display: flex;
+        flex-direction: column;
+        margin-top: 1em;
+      }
+    </style>
   </head>
   <body>
-    <h1>Hello, world!</h1>
-    <p>This is a webview panel.</p>
+    <h1>Legg inn kommentar</h1>
+    <h2>Velg kommentartype</h2>
+    <input type="radio" id="comment" name="options" value="comment" checked />
+    <label for="comment">Vanlig kommentar</label><br />
+    <input
+      type="radio"
+      id="codeSuggestion"
+      name="options"
+      value="codeSuggestion"
+    />
+    <label for="codeSuggestion">Kodeforslag</label><br />
+    <div id="commentBox">
+      <textarea placeholder="Skriv her."></textarea>
+      <button>Legg til</button>
+    </div>
   </body>
 </html>

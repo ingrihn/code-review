@@ -1,18 +1,18 @@
 import * as path from "path";
 import * as vscode from "vscode";
 
-let commentPanel: vscode.WebviewPanel | undefined;
+let panel: vscode.WebviewPanel;
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.commands.registerCommand("extension.showCommentSidebar", () => {
-      const panel = vscode.window.createWebviewPanel(
+      panel = vscode.window.createWebviewPanel(
         "commentSidebar",
         "Comment Sidebar",
         vscode.ViewColumn.Beside,
-        {}
+        { enableScripts: true }
       );
 
       getWebviewContent(context).then((content) => {
@@ -34,8 +34,8 @@ async function getWebviewContent(
 }
 
 // This method is called when your extension is deactivated
-function deactivate() {
-  if (commentPanel) {
-    commentPanel.dispose();
+export function deactivate() {
+  if (panel) {
+    panel.dispose();
   }
 }
