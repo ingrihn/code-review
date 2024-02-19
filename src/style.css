@@ -1,4 +1,4 @@
-#inlineComment {
+#commentBox {
   display: flex;
   flex-direction: column;
 }

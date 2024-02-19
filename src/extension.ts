@@ -1,3 +1,4 @@
+import * as fs from "fs";
 import * as path from "path";
 import * as vscode from "vscode";
 
@@ -12,25 +13,36 @@ export function activate(context: vscode.ExtensionContext) {
         "commentSidebar",
         "Comment Sidebar",
         vscode.ViewColumn.Beside,
-        { enableScripts: true }
+        {
+          enableScripts: true,
+        }
       );
 
-      getWebviewContent(context).then((content) => {
-        panel.webview.html = content;
+      const cssDiskPath = vscode.Uri.joinPath(
+        context.extensionUri,
+        "src",
+        "style.css"
+      );
+      const cssUri = panel.webview.asWebviewUri(cssDiskPath);
+      const htmlFilePath = vscode.Uri.joinPath(
+        context.extensionUri,
+        "src",
+        "webview.html"
+      );
+
+      fs.readFile(htmlFilePath.fsPath, "utf-8", (err, data) => {
+        if (err) {
+          vscode.window.showErrorMessage(
+            `Error reading HTML file: ${err.message}`
+          );
+          return;
+        }
+
+        // Set the HTML content of the webview panel
+        panel.webview.html = data.replace("${cssPath}", cssUri.toString());
       });
     })
   );
-}
-
-async function getWebviewContent(
-  context: vscode.ExtensionContext
-): Promise<string> {
-  const webViewPath = path.join(context.extensionPath, "/src/webview.html");
-
-  const content = await vscode.workspace.fs.readFile(
-    vscode.Uri.file(webViewPath)
-  );
-  return content.toString();
 }
 
 // This method is called when your extension is deactivated
