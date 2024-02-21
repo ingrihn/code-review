@@ -1,0 +1,50 @@
+@import "../node_modules/bootstrap/scss/bootstrap";
+@import "../node_modules/bootstrap/scss/functions";
+@import "../node_modules/bootstrap/scss/variables";
+
+$primary: #8CBEB2;
+$secondary: #557a70;
+
+#commentBox {
+    display: flex;
+    flex-direction: column;
+  } 
+  
+  body {
+    background-color: #F5F2ED;
+    font-family: Helvetica, sans-serif;
+  }
+  
+  .btn-group {
+    margin-bottom: 0.7em;
+  }
+  
+  .btn-primary {
+    background-color: $primary;
+    color: black;
+    border-color: $secondary;
+  
+    &:hover {
+      background-color: $secondary;
+      border-color: $secondary;
+    }
+  }
+
+  .btn-outline-primary {
+    border-color: $secondary;
+    color: $secondary;
+  }
+
+  input[class="btn-check"]:checked + label {
+    background-color: $primary !important;
+    color: black !important;
+    border-color: $secondary !important;
+  }
+
+  input[class="btn-check"]:hover + label {
+    background-color: $secondary !important;
+    color: white !important;
+    border-color: $secondary !important;
+  }
+
+  
