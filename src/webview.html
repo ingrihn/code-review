@@ -40,8 +40,10 @@
       <label class="btn btn-outline-primary" for="btnradio2">Kodeforslag</label>
     </div>
     <div>
-      <textarea placeholder="Skriv her."></textarea> <br />
-      <button type="button" class="btn btn-primary btn-sm">Legg til</button>
+      <textarea placeholder="Skriv her." id="textBox"></textarea> <br />
+      <button type="button" class="btn btn-primary btn-sm" onclick="sendText()">
+        Legg til
+      </button>
     </div>
 
     <script
@@ -49,5 +51,12 @@
       integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
       crossorigin="anonymous"
     ></script>
+    <script>
+      function sendText() {
+        const vscode = acquireVsCodeApi();
+        const text = document.getElementById("textBox").value;
+        vscode.postMessage({ command: "getText", text: text });
+      }
+    </script>
   </body>
 </html>
