@@ -4,6 +4,7 @@
 
 $primary: #8CBEB2;
 $secondary: #557a70;
+$tertiary: #28443d;
 
 #commentBox {
     display: flex;
@@ -11,6 +12,7 @@ $secondary: #557a70;
   } 
   
   body {
+    margin-top: 1em;
     background-color: #F5F2ED;
     font-family: Helvetica, sans-serif;
   }
@@ -28,6 +30,19 @@ $secondary: #557a70;
       background-color: $secondary;
       border-color: $secondary;
     }
+
+    &:active {
+      background-color: $tertiary !important;
+    }
+  }
+    
+  h1 {
+    font-size: 1.5em;
+    font-weight: bold;
+  }
+
+  h2 {
+    font-size: 1em;
   }
 
   .btn-outline-primary {

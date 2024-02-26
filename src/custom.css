@@ -11861,6 +11861,7 @@ textarea.form-control-lg {
 }
 
 body {
+  margin-top: 1em;
   background-color: #F5F2ED;
   font-family: Helvetica, sans-serif;
 }
@@ -11877,6 +11878,18 @@ body {
 .btn-primary:hover {
   background-color: #557a70;
   border-color: #557a70;
+}
+.btn-primary:active {
+  background-color: #28443d !important;
+}
+
+h1, .h1 {
+  font-size: 1.5em;
+  font-weight: bold;
+}
+
+h2, .h2 {
+  font-size: 1em;
 }
 
 .btn-outline-primary {
