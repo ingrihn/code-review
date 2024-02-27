@@ -3,6 +3,7 @@ import * as path from "path";
 import * as vscode from "vscode";
 
 let panel: vscode.WebviewPanel;
+let panel2: vscode.WebviewPanel;
 
 export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
@@ -10,7 +11,7 @@ export function activate(context: vscode.ExtensionContext) {
       panel = vscode.window.createWebviewPanel(
         "commentSidebar",
         "Comment Sidebar",
-        vscode.ViewColumn.Beside,
+        vscode.ViewColumn.Two,
         {
           enableScripts: true,
         }
@@ -22,24 +23,47 @@ export function activate(context: vscode.ExtensionContext) {
         "custom.css"
       );
       const cssUri = panel.webview.asWebviewUri(cssDiskPath);
-      const htmlFilePath = vscode.Uri.joinPath(
+      const htmlFilePath1 = vscode.Uri.joinPath(
         context.extensionUri,
         "src",
         "webview.html"
       );
-      fs.readFile(htmlFilePath.fsPath, "utf-8", (err, data) => {
-        if (err) {
-          vscode.window.showErrorMessage(
-            `Error reading HTML file: ${err.message}`
-          );
-          return;
-        }
-    
-        panel.webview.html = data.replace("${cssPath}", cssUri.toString());
+
+      vscode.workspace.fs.readFile(htmlFilePath1).then((htmlContent) => {
+        const htmlString = new TextDecoder().decode(htmlContent);
+
+        const htmlWithInjectedContext = htmlString.replace(
+          "${cssPath}",
+          cssUri.toString()
+        );
+        panel.webview.html = htmlWithInjectedContext;
       });
-    })
-  );
-}
+
+      panel2 = vscode.window.createWebviewPanel(
+        "generalComment",
+        "General Comment",
+        vscode.ViewColumn.Three,
+        {
+          enableScripts: true,
+        }
+      );
+
+      const htmlFilePath2 = vscode.Uri.joinPath(
+        context.extensionUri,
+        "src",
+        "general-comments.html"
+      );
+
+      vscode.workspace.fs.readFile(htmlFilePath2).then((htmlContent) => {
+        const htmlString = new TextDecoder().decode(htmlContent);
+
+        const htmlWithInjectedContext = htmlString.replace(
+          "${cssPath}",
+          cssUri.toString()
+        );
+        panel2.webview.html = htmlWithInjectedContext;
+      });
+    }));}
 
 export function deactivate() {
   if (panel) {
