@@ -4,6 +4,7 @@ import * as vscode from "vscode";
 
 let panel: vscode.WebviewPanel;
 let panel2: vscode.WebviewPanel;
+let workspaceState: vscode.Memento;
 
 export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
@@ -16,6 +17,7 @@ export function activate(context: vscode.ExtensionContext) {
           enableScripts: true,
         }
       );
+      workspaceState = context.workspaceState;
 
       const cssDiskPath = vscode.Uri.joinPath(
         context.extensionUri,
@@ -54,6 +56,9 @@ export function activate(context: vscode.ExtensionContext) {
         "general-comments.html"
       );
 
+      //let keys = workspaceState.keys;
+      
+
       vscode.workspace.fs.readFile(htmlFilePath2).then((htmlContent) => {
         const htmlString = new TextDecoder().decode(htmlContent);
 
@@ -62,8 +67,27 @@ export function activate(context: vscode.ExtensionContext) {
           cssUri.toString()
         );
         panel2.webview.html = htmlWithInjectedContext;
+
+        panel2.webview.onDidReceiveMessage(
+          (message) => {
+            handleGeneralComment(message);
+          },
+          undefined,
+          context.subscriptions
+        );
       });
     }));}
+
+function handleGeneralComment(
+  message: any) {
+    if (message.command.includes("getGeneral")) {
+      const text = message.text;
+      const key = message.command;
+      workspaceState.update(key, text).then(() => {
+        vscode.window.showInformationMessage("General comment saved successfully!");
+      });
+  }
+}
 
 export function deactivate() {
   if (panel) {

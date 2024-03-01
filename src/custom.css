@@ -11855,7 +11855,7 @@ textarea.form-control-lg {
     display: none !important;
   }
 }
-#commentBox {
+.commentBox {
   display: flex;
   flex-direction: column;
 }
@@ -11883,6 +11883,19 @@ body {
   background-color: #28443d !important;
 }
 
+.btn-secondary {
+  background-color: #F4F4F4;
+  color: black;
+  border-color: black;
+}
+.btn-secondary:hover {
+  background-color: #557a70;
+  border-color: #557a70;
+}
+.btn-secondary:active {
+  background-color: #28443d !important;
+}
+
 h1, .h1 {
   font-size: 1.5em;
   font-weight: bold;
@@ -11907,6 +11920,32 @@ input[class=btn-check]:hover + label {
   background-color: #557a70 !important;
   color: white !important;
   border-color: #557a70 !important;
+}
+
+.flex-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.radio-button-group {
+  max-width: 100%;
+  margin-top: 2em;
+  display: flex;
+}
+
+.rubric {
+  padding: 0.5em;
+  background-color: #F4F4F4;
+  border: 0.5px solid #525252;
+}
+
+.bi-search {
+  color: #8CBEB2;
+}
+
+textarea {
+  max-width: 100%;
 }
 
 .container {
@@ -11964,28 +12003,6 @@ input[class=btn-check]:hover + label {
   height: 50%;
   border-radius: 50%;
   background: #8CBEB2;
-}
-
-.flex-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.radio-button-group {
-  width: 60%;
-  margin-top: 2em;
-  display: flex;
-}
-
-.rubric {
-  padding: 0.5em;
-  background-color: #F4F4F4;
-  border: 0.5px solid #525252;
-}
-
-.bi-search {
-  color: #8CBEB2;
 }
 
 /*# sourceMappingURL=custom.css.map */

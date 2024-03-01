@@ -6,7 +6,7 @@ $primary: #8CBEB2;
 $secondary: #557a70;
 $tertiary: #28443d;
 
-#commentBox {
+.commentBox {
     display: flex;
     flex-direction: column;
   } 
@@ -25,6 +25,21 @@ $tertiary: #28443d;
     background-color: $primary;
     color: black;
     border-color: $secondary;
+  
+    &:hover {
+      background-color: $secondary;
+      border-color: $secondary;
+    }
+
+    &:active {
+      background-color: $tertiary !important;
+    }
+  }
+
+  .btn-secondary {
+    background-color: #F4F4F4;
+    color: black;
+    border-color: black;
   
     &:hover {
       background-color: $secondary;
@@ -69,7 +84,7 @@ $tertiary: #28443d;
    }
   
    .radio-button-group {
-    width: 60%;
+    max-width: 100%;
     margin-top: 2em;
     display: flex;
    }
@@ -82,6 +97,10 @@ $tertiary: #28443d;
   
   .bi-search {
     color: $primary;
+  }
+
+  textarea {
+    max-width: 100%;
   }
 
   .container {
