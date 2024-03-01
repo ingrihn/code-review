@@ -26,6 +26,27 @@
           "group": "1_modification"
         }
       ]
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "collabrate",
+          "title": "CollabRate",
+          "icon": "$(comment)"
+        }
+      ]
+    },
+    "views": {
+      "collabrate": [
+        {
+          "id": "collabrate-dependencies",
+          "name": "Dependencies"
+        },
+        {
+          "id": "collabrate-outline",
+          "name": "Outline"
+        }
+      ]
     }
   },
   "scripts": {
