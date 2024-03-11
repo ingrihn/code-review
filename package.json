@@ -39,15 +39,22 @@
     "views": {
       "collabrate": [
         {
-          "id": "collabrate-dependencies",
-          "name": "Dependencies"
+          "type": "webview",
+          "id": "collabrate-general",
+          "name": "General Comments"
         },
         {
-          "id": "collabrate-outline",
-          "name": "Outline"
+          "id": "collabrate-inline",
+          "name": "Inline comments"
         }
       ]
-    }
+    },
+    "viewsWelcome": [
+      {
+        "view": "collabrate-inline",
+        "contents": "No inline comments found. Create a new comment by highlighting the relevant code lines, right-clicking and choosing \n\"Collabrate\"\n"
+      }
+    ]
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
