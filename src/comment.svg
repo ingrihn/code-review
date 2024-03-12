@@ -1,19 +1,6 @@
-<svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-<g filter="url(#filter0_d_8_10)">
-<circle cx="14.0424" cy="10.0424" r="9.04239" fill="#8CBEB2"/>
-<circle cx="14.0424" cy="10.0424" r="9.16739" stroke="black" stroke-width="0.25"/>
-</g>
-<path d="M10.0229 6.40967H10.0387L10.0486 6.39978H17.685V13.8851L15.9204 12.1205L15.8838 12.0838H15.832H10.0229V6.40967Z" fill="white" stroke="black" stroke-width="0.25"/>
-<defs>
-<filter id="filter0_d_8_10" x="0.75" y="0.75" width="26.5848" height="26.5847" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
-<feFlood flood-opacity="0" result="BackgroundImageFix"/>
-<feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
-<feOffset dy="4"/>
-<feGaussianBlur stdDeviation="2"/>
-<feComposite in2="hardAlpha" operator="out"/>
-<feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.25 0"/>
-<feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_8_10"/>
-<feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_8_10" result="shape"/>
-</filter>
-</defs>
+<svg width="13px" height="13px" viewBox="0 0 29 29" xmlns="http://www.w3.org/2000/svg" fill="#a8a8a8">
+    <path d="M26.664 4.82h-21.328c-1.178 0-2.132 0.955-2.132 2.133v13.868c0 1.178 0.955 2.133 2.132 2.133h14.968l4.226 4.226v-4.226h2.134c1.178 0 2.133-0.955 2.133-2.133v-13.868c-0-1.178-0.955-2.133-2.133-2.133zM27.73 20.821c0 0.588-0.479 1.066-1.066 1.066h-3.2v2.718l-2.718-2.718h-15.41c-0.588 0-1.066-0.478-1.066-1.066v-13.868c0-0.588 0.479-1.066 1.066-1.066h21.328c0.588 0 1.066 0.478 1.066 1.066v13.868z"/>
+    <path d="M16 12.824c-0.589 0-1.066 0.478-1.066 1.066s0.477 1.066 1.066 1.066 1.066-0.477 1.066-1.066c0-0.588-0.477-1.066-1.066-1.066z"/>
+    <path d="M20.265 12.824c-0.589 0-1.066 0.478-1.066 1.066s0.477 1.066 1.066 1.066 1.066-0.477 1.066-1.066c0-0.588-0.477-1.066-1.066-1.066z"/>
+    <path d="M11.835 12.824c-0.589 0-1.066 0.478-1.066 1.066s0.477 1.066 1.066 1.066 1.066-0.477 1.066-1.066c0-0.588-0.477-1.066-1.066-1.066z"/>
 </svg>

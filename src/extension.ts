@@ -1,32 +1,69 @@
 import * as fs from "fs";
-import * as vscode from "vscode";
+
+import {
+  DecorationOptions,
+  ExtensionContext,
+  Memento,
+  Position,
+  Range,
+  Selection,
+  TextEditor,
+  TextEditorDecorationType,
+  Uri,
+  ViewColumn,
+  WebviewPanel,
+  commands,
+  window,
+} from "vscode";
 
 import path from "path";
 
-let panel: vscode.WebviewPanel;
-let activeEditor: vscode.TextEditor | undefined;
+let panel: WebviewPanel;
+let activeEditor: TextEditor;
+let decorationOptions: DecorationOptions[];
+let workspaceState: Memento;
+let icon: TextEditorDecorationType;
+let ctx: ExtensionContext;
 
-export function activate(context: vscode.ExtensionContext) {
+export function activate(context: ExtensionContext) {
+  ctx = context;
+
   context.subscriptions.push(
-    vscode.commands.registerCommand("extension.showCommentSidebar", () => {
-      panel = vscode.window.createWebviewPanel(
+    commands.registerCommand("extension.startReview", () => {
+      decorationOptions = [];
+      activeEditor = window.activeTextEditor ?? window.visibleTextEditors[0];
+      workspaceState = context.workspaceState;
+      // clearWorkspaceState();
+      icon = window.createTextEditorDecorationType({
+        after: {
+          contentIconPath: context.asAbsolutePath(
+            path.join("src", "comment.svg")
+          ),
+          margin: "5px",
+        },
+      });
+      getComments();
+    })
+  );
+
+  context.subscriptions.push(
+    commands.registerCommand("extension.showCommentSidebar", () => {
+      panel = window.createWebviewPanel(
         "commentSidebar",
         "Comment Sidebar",
-        vscode.ViewColumn.Beside,
+        ViewColumn.Beside,
         {
           enableScripts: true,
         }
       );
 
-      activeEditor = vscode.window.activeTextEditor;
-
-      const cssDiskPath = vscode.Uri.joinPath(
+      const cssDiskPath = Uri.joinPath(
         context.extensionUri,
         "src",
         "custom.css"
       );
       const cssUri = panel.webview.asWebviewUri(cssDiskPath);
-      const htmlFilePath = vscode.Uri.joinPath(
+      const htmlFilePath = Uri.joinPath(
         context.extensionUri,
         "src",
         "webview.html"
@@ -34,9 +71,7 @@ export function activate(context: vscode.ExtensionContext) {
 
       fs.readFile(htmlFilePath.fsPath, "utf-8", (err, data) => {
         if (err) {
-          vscode.window.showErrorMessage(
-            `Error reading HTML file: ${err.message}`
-          );
+          window.showErrorMessage(`Error reading HTML file: ${err.message}`);
           return;
         }
 
@@ -44,7 +79,7 @@ export function activate(context: vscode.ExtensionContext) {
 
         panel.webview.onDidReceiveMessage(
           (message) => {
-            handleMessageFromWebview(message, context);
+            handleMessageFromWebview(message);
           },
           undefined,
           context.subscriptions
@@ -52,72 +87,96 @@ export function activate(context: vscode.ExtensionContext) {
       });
     })
   );
+
+  context.subscriptions.push(
+    window.onDidChangeActiveTextEditor((editor: TextEditor | undefined) => {
+      if (editor) {
+        activeEditor = editor;
+        getComments();
+      }
+    })
+  );
 }
 
-function handleMessageFromWebview(
-  message: any,
-  context: vscode.ExtensionContext
-) {
+function handleMessageFromWebview(message: any) {
   switch (message.command) {
     case "getText":
-      const text = message.text;
-      const selection = activeEditor?.selection;
-      console.log(selection?.start);
-      console.log(selection?.end);
-      let key: string = "";
+      const { text: commentText } = message;
+      const { selection, document } = activeEditor;
+      const fileName = document.fileName;
 
-      if (activeEditor && selection) {
-        key = createKey(
-          activeEditor?.document.fileName,
-          selection.start,
-          selection.end
-        );
-
-        // Store comment locally
-        const workspaceState = context.workspaceState;
-        workspaceState.update(key, text).then(() => {
-          vscode.window.showInformationMessage("Comment saved successfully!");
-          console.log("yeehaw " + workspaceState.get(key));
-        });
-
-        deactivate();
-        setDecoration(context, selection);
-      } else {
-        vscode.window.showErrorMessage("No active text editor found.");
-      }
-
-      break;
+      saveInCSV(fileName, selection.start, selection.end, commentText);
+      deactivate();
+      showComment(selection);
   }
 }
 
-function setDecoration(
-  context: vscode.ExtensionContext,
-  selection: vscode.Selection
+function saveInCSV(
+  fileName: string,
+  start: Position,
+  end: Position,
+  comment: string
 ) {
-  const icon = vscode.window.createTextEditorDecorationType({
-    after: {
-      contentIconPath: context.asAbsolutePath(path.join("src", "comment.svg")),
-    },
+  // Store comment locally
+  const key = createKey(fileName, start, end);
+  workspaceState.update(key, comment).then(() => {
+    window.showInformationMessage("Comment saved successfully!");
   });
 
-  const decorationOptions: vscode.DecorationOptions[] = [];
-  const lineNumber = selection.end.line; // Get the line number of the selected line
-  const line = activeEditor?.document.lineAt(lineNumber); // Get the selected line
-  console.log(lineNumber);
-  console.log(line);
+  const csvPath: Uri = Uri.joinPath(ctx.extensionUri, "comments.csv");
+  if (!fs.existsSync(csvPath.fsPath)) {
+    const header: string = "file,lines,characters,comment\n";
+    fs.writeFileSync(csvPath.fsPath, header);
+  }
+  const lines = `${findCodeLine(start.line)}-${findCodeLine(end.line)}`;
+  const characters = `${findCodeLine(start.character)}-${findCodeLine(
+    end.character
+  )}`;
+  const csvEntry = `${fileName},${lines},${characters},${comment}\n`;
+  fs.appendFileSync(csvPath.fsPath, csvEntry);
+}
+
+function showComment(selection: Selection) {
+  const lineNumber = selection.end.line;
+  const line = activeEditor.document.lineAt(lineNumber);
+  const lineEnd = line.text.length;
 
   if (line) {
-    const position = new vscode.Position(lineNumber, line.range.end.character); // Set decoration at the end of the selected line
-    decorationOptions.push({ range: new vscode.Range(position, position) });
-    activeEditor?.setDecorations(icon, decorationOptions);
+    const position = new Position(lineNumber, lineEnd);
+    decorationOptions.push({ range: new Range(position, position) });
+    activeEditor.setDecorations(icon, decorationOptions);
   }
 }
 
-function createKey(
-  filePath: string,
-  start: vscode.Position,
-  end: vscode.Position
-): string {
+function getComments() {
+  decorationOptions = [];
+  activeEditor.setDecorations(icon, []);
+
+  const fileName: string = activeEditor.document.fileName;
+  const commentsForFile = workspaceState
+    .keys()
+    .filter((key) => key.startsWith(fileName));
+
+  commentsForFile.forEach((key) => {
+    // const commentText = workspaceState.get(key);
+    const suffix: number = key.indexOf(".tsx_");
+    const codeLines: number[] = key
+      .substring(suffix + 5)
+      .split("_")
+      .map((value) => parseInt(value));
+
+    // start.line, end.line, start.character, end.character
+    const position = new Position(codeLines[1] - 1, codeLines[3] - 1);
+    decorationOptions.push({ range: new Range(position, position) });
+  });
+
+  // Only set decorations if the active editor is the same as before
+  if (window.activeTextEditor === activeEditor) {
+    activeEditor.setDecorations(icon, decorationOptions);
+  }
+}
+
+function createKey(filePath: string, start: Position, end: Position): string {
   return (
     filePath +
     "_" +
@@ -138,5 +197,6 @@ function findCodeLine(codeLine: number): string {
 export function deactivate() {
   if (panel) {
     panel.dispose();
+    activeEditor = window.visibleTextEditors[0];
   }
 }

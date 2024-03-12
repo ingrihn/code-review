@@ -9,13 +9,19 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": [],
+  "activationEvents": [
+    "onDidChangeActiveTextEditor"
+  ],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
       {
+        "command": "extension.startReview",
+        "title": "CollabRate: Start Review"
+      },
+      {
         "command": "extension.showCommentSidebar",
-        "title": "CollabRate"
+        "title": "CollabRate: Add Comment"
       }
     ],
     "menus": {
@@ -23,6 +29,11 @@
         {
           "when": "resourceScheme == 'file'",
           "command": "extension.showCommentSidebar",
+          "group": "1_modification"
+        },
+        {
+          "when": "resourceScheme == 'file'",
+          "command": "extension.startReview",
           "group": "1_modification"
         }
       ]
