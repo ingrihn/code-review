@@ -56,13 +56,27 @@ $tertiary: #28443d;
   }
     
   h1 {
-    font-size: 0.8em;
     font-weight: bold;
     color: #cccccc;
   }
 
   h2 {
+    color: #cccccc;
+  }
+
+  h3 {
     font-size: 0.9em;
+    font-weight: bold;
+    color: #cccccc;
+  }
+
+  h4 {
+    font-size: 0.8em;
+    font-weight: 600;
+  }
+
+  #rubricDescription {
+    font-size: 0.7em;
   }
 
   .btn-outline-primary {
@@ -112,10 +126,10 @@ $tertiary: #28443d;
   .container {
     display: block;
     position: relative;
-    padding-left: 14px;
+    padding-left: 18px;
     margin-bottom: 12px;
     cursor: pointer;
-    font-size: 12px;
+    font-size: 13px;
     -webkit-user-select: none;
     -moz-user-select: none;
     -ms-user-select: none;
@@ -132,8 +146,8 @@ $tertiary: #28443d;
     position: absolute;
     top: 0;
     left: 0;
-    height: 12.5px;
-    width: 12.5px;
+    height: 15px;
+    width: 15px;
     background-color: white;
     border-radius: 50%;
     border: 1px solid black;
