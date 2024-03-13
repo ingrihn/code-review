@@ -1,0 +1,14 @@
+{
+    "rubrics": [
+        {
+            "title": "Hvordan vil du vurdere kodekvaliteten?",
+            "description": "Her kan du for eksempel se på fil- og mappestruktur, lesbarhet av koden og gjenbruk av kode.",
+            "has_score": "true"
+        },
+        {
+            "title": "Hvordan vil du vurdere dokumentasjonen?",
+            "description": "Gi en vurdering av dokumentasjonen tilknyttet kjøring og bygging av prosjektet, arkitekturen, etc.",
+            "has_score": "true"
+        }
+    ]
+} 
