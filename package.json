@@ -26,7 +26,35 @@
           "group": "1_modification"
         }
       ]
-    }
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "collabrate",
+          "title": "CollabRate",
+          "icon": "$(comment)"
+        }
+      ]
+    },
+    "views": {
+      "collabrate": [
+        {
+          "type": "webview",
+          "id": "collabrate-general",
+          "name": "General Comments"
+        },
+        {
+          "id": "collabrate-inline",
+          "name": "Inline comments"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "collabrate-inline",
+        "contents": "No inline comments found. Create a new comment by highlighting the relevant code lines, right-clicking and choosing \n\"Collabrate\"\n"
+      }
+    ]
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
