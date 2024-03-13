@@ -3,7 +3,6 @@ import * as fs from "fs";
 import {
   DecorationOptions,
   ExtensionContext,
-  Memento,
   Position,
   Range,
   Selection,
@@ -17,34 +16,37 @@ import {
 } from "vscode";
 
 import path from "path";
+import readline from "readline";
+
+interface CommentType {
+  fileName: string;
+  lineStart: number;
+  lineEnd: number;
+  characterStart: number;
+  characterEnd: number;
+  comment: string;
+}
 
 let panel: WebviewPanel;
 let activeEditor: TextEditor;
 let decorationOptions: DecorationOptions[];
-let workspaceState: Memento;
 let icon: TextEditorDecorationType;
 let ctx: ExtensionContext;
+const header: string = "file,lines,characters,comment\n";
+let comments: CommentType[];
 
 export function activate(context: ExtensionContext) {
   ctx = context;
-
-  context.subscriptions.push(
-    commands.registerCommand("extension.startReview", () => {
-      decorationOptions = [];
-      activeEditor = window.activeTextEditor ?? window.visibleTextEditors[0];
-      workspaceState = context.workspaceState;
-      // clearWorkspaceState();
-      icon = window.createTextEditorDecorationType({
-        after: {
-          contentIconPath: context.asAbsolutePath(
-            path.join("src", "comment.svg")
-          ),
-          margin: "5px",
-        },
-      });
-      getComments();
-    })
-  );
+  decorationOptions = [];
+  activeEditor = window.activeTextEditor ?? window.visibleTextEditors[0];
+  comments = [];
+  icon = window.createTextEditorDecorationType({
+    after: {
+      contentIconPath: context.asAbsolutePath(path.join("src", "comment.svg")),
+      margin: "5px",
+    },
+  });
+  getComments();
 
   context.subscriptions.push(
     commands.registerCommand("extension.showCommentSidebar", () => {
@@ -57,19 +59,11 @@ export function activate(context: ExtensionContext) {
         }
       );
 
-      const cssDiskPath = Uri.joinPath(
-        context.extensionUri,
-        "src",
-        "custom.css"
-      );
-      const cssUri = panel.webview.asWebviewUri(cssDiskPath);
-      const htmlFilePath = Uri.joinPath(
-        context.extensionUri,
-        "src",
-        "webview.html"
-      );
+      const webviewPath = path.resolve(__dirname, "../src/webview.html");
+      const cssPath = Uri.joinPath(context.extensionUri, "src", "custom.css");
+      const cssUri = panel.webview.asWebviewUri(cssPath);
 
-      fs.readFile(htmlFilePath.fsPath, "utf-8", (err, data) => {
+      fs.readFile(webviewPath, "utf-8", (err, data) => {
         if (err) {
           window.showErrorMessage(`Error reading HTML file: ${err.message}`);
           return;
@@ -117,15 +111,8 @@ function saveInCSV(
   end: Position,
   comment: string
 ) {
-  // Store comment locally
-  const key = createKey(fileName, start, end);
-  workspaceState.update(key, comment).then(() => {
-    window.showInformationMessage("Comment saved successfully!");
-  });
-
   const csvPath: Uri = Uri.joinPath(ctx.extensionUri, "comments.csv");
   if (!fs.existsSync(csvPath.fsPath)) {
-    const header: string = "file,lines,characters,comment\n";
     fs.writeFileSync(csvPath.fsPath, header);
   }
   const lines = `${findCodeLine(start.line)}-${findCodeLine(end.line)}`;
@@ -140,7 +127,7 @@ function showComment(selection: Selection) {
   const lineNumber = selection.end.line;
   const line = activeEditor.document.lineAt(lineNumber);
   const lineEnd = line.text.length;
-
+  console.log(lineEnd);
   if (line) {
     const position = new Position(lineNumber, lineEnd);
     decorationOptions.push({ range: new Range(position, position) });
@@ -148,25 +135,59 @@ function showComment(selection: Selection) {
   }
 }
 
-function getComments() {
+function readFromCSV() {
+  const csvPath = path.resolve(__dirname, "../comments.csv");
+
+  const stream = fs.createReadStream(csvPath, {
+    encoding: "utf8",
+    start: header.length,
+  });
+
+  const rl = readline.createInterface({ input: stream });
+  return new Promise<void>((resolve, reject) => {
+    rl.on("line", (row) => {
+      const [fileName, lines, characters, comment] = row.split(",");
+      const [lineStart, lineEnd] = lines.split("-").map(Number);
+      const [characterStart, characterEnd] = characters.split("-").map(Number);
+
+      const commentObject: CommentType = {
+        fileName: fileName.trim(),
+        lineStart,
+        lineEnd,
+        characterStart,
+        characterEnd,
+        comment: comment.trim(),
+      };
+
+      comments.push(commentObject);
+    });
+
+    rl.on("close", () => {
+      resolve();
+    });
+
+    rl.on("error", (err) => {
+      reject(err);
+    });
+  });
+}
+
+async function getComments() {
   decorationOptions = [];
   activeEditor.setDecorations(icon, []);
+  comments = [];
+
+  await readFromCSV();
 
   const fileName: string = activeEditor.document.fileName;
-  const commentsForFile = workspaceState
-    .keys()
-    .filter((key) => key.startsWith(fileName));
-
-  commentsForFile.forEach((key) => {
-    // const commentText = workspaceState.get(key);
-    const suffix: number = key.indexOf(".tsx_");
-    const codeLines: number[] = key
-      .substring(suffix + 5)
-      .split("_")
-      .map((value) => parseInt(value));
-
-    // start.line, end.line, start.character, end.character
-    const position = new Position(codeLines[1] - 1, codeLines[3] - 1);
+  const fileComments = comments.filter(
+    (comment) => comment.fileName === fileName
+  );
+  fileComments.forEach((comment) => {
+    const position = new Position(
+      comment.lineEnd - 1,
+      comment.characterEnd - 1
+    );
     decorationOptions.push({ range: new Range(position, position) });
   });
 
@@ -174,20 +195,6 @@ function getComments() {
   if (window.activeTextEditor === activeEditor) {
     activeEditor.setDecorations(icon, decorationOptions);
   }
-}
-
-function createKey(filePath: string, start: Position, end: Position): string {
-  return (
-    filePath +
-    "_" +
-    findCodeLine(start.line) +
-    "_" +
-    findCodeLine(end.line) +
-    "_" +
-    findCodeLine(start.character) +
-    "_" +
-    findCodeLine(end.character)
-  );
 }
 
 function findCodeLine(codeLine: number): string {
