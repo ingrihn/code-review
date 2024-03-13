@@ -29,15 +29,17 @@ interface CommentType {
 
 let panel: WebviewPanel;
 let activeEditor: TextEditor;
-let decorationOptions: DecorationOptions[];
+let iconDecoration: DecorationOptions[];
+let highlightDecoration: DecorationOptions[];
 let icon: TextEditorDecorationType;
+let highlight: TextEditorDecorationType;
 let ctx: ExtensionContext;
 const header: string = "file,lines,characters,comment\n";
 let comments: CommentType[];
 
 export function activate(context: ExtensionContext) {
   ctx = context;
-  decorationOptions = [];
+  iconDecoration = [];
   activeEditor = window.activeTextEditor ?? window.visibleTextEditors[0];
   comments = [];
   icon = window.createTextEditorDecorationType({
@@ -45,6 +47,9 @@ export function activate(context: ExtensionContext) {
       contentIconPath: context.asAbsolutePath(path.join("src", "comment.svg")),
       margin: "5px",
     },
+  });
+  highlight = window.createTextEditorDecorationType({
+    backgroundColor: "#8CBEB260",
   });
   getComments();
 
@@ -98,10 +103,8 @@ function handleMessageFromWebview(message: any) {
       const { text: commentText } = message;
       const { selection, document } = activeEditor;
       const fileName = document.fileName;
-
       saveInCSV(fileName, selection.start, selection.end, commentText);
       deactivate();
-      showComment(selection);
   }
 }
 
@@ -121,18 +124,6 @@ function saveInCSV(
   )}`;
   const csvEntry = `${fileName},${lines},${characters},${comment}\n`;
   fs.appendFileSync(csvPath.fsPath, csvEntry);
-}
-
-function showComment(selection: Selection) {
-  const lineNumber = selection.end.line;
-  const line = activeEditor.document.lineAt(lineNumber);
-  const lineEnd = line.text.length;
-  console.log(lineEnd);
-  if (line) {
-    const position = new Position(lineNumber, lineEnd);
-    decorationOptions.push({ range: new Range(position, position) });
-    activeEditor.setDecorations(icon, decorationOptions);
-  }
 }
 
 function readFromCSV() {
@@ -173,9 +164,11 @@ function readFromCSV() {
 }
 
 async function getComments() {
-  decorationOptions = [];
-  activeEditor.setDecorations(icon, []);
   comments = [];
+  iconDecoration = [];
+  highlightDecoration = [];
+  activeEditor.setDecorations(icon, []);
+  activeEditor.setDecorations(highlight, []);
 
   await readFromCSV();
 
@@ -183,17 +176,22 @@ async function getComments() {
   const fileComments = comments.filter(
     (comment) => comment.fileName === fileName
   );
+
   fileComments.forEach((comment) => {
-    const position = new Position(
-      comment.lineEnd - 1,
-      comment.characterEnd - 1
-    );
-    decorationOptions.push({ range: new Range(position, position) });
+    const { lineStart, lineEnd, characterStart, characterEnd } = comment;
+    const start = new Position(lineStart - 1, characterStart - 1);
+    const end = new Position(lineEnd - 1, characterEnd - 1);
+    const lineLength = activeEditor.document.lineAt(lineEnd).text.length;
+    const lineLengthPos = new Position(lineEnd - 1, lineLength + 1);
+
+    iconDecoration.push({ range: new Range(end, lineLengthPos) });
+    highlightDecoration.push({ range: new Range(start, end) });
   });
 
   // Only set decorations if the active editor is the same as before
   if (window.activeTextEditor === activeEditor) {
-    activeEditor.setDecorations(icon, decorationOptions);
+    activeEditor.setDecorations(icon, iconDecoration);
+    activeEditor.setDecorations(highlight, highlightDecoration);
   }
 }
 
