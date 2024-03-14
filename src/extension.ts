@@ -13,6 +13,7 @@ import {
   WebviewPanel,
   commands,
   window,
+  workspace,
 } from "vscode";
 
 import path from "path";
@@ -101,35 +102,63 @@ function handleMessageFromWebview(message: any) {
   switch (message.command) {
     case "getText":
       const { text: commentText } = message;
-      const { selection, document } = activeEditor;
-      const fileName = document.fileName;
-      saveInCSV(fileName, selection.start, selection.end, commentText);
+      const fileName = activeEditor.document.fileName;
+      saveInCSV(fileName, activeEditor.selection, commentText);
       deactivate();
   }
 }
 
-function saveInCSV(
-  fileName: string,
-  start: Position,
-  end: Position,
-  comment: string
-) {
-  const csvPath: Uri = Uri.joinPath(ctx.extensionUri, "comments.csv");
-  if (!fs.existsSync(csvPath.fsPath)) {
-    fs.writeFileSync(csvPath.fsPath, header);
+function getCSVFilePath() {
+  const docUri = activeEditor.document.uri;
+  const workspaceFolder = workspace.getWorkspaceFolder(docUri);
+  if (!workspaceFolder) {
+    window.showErrorMessage("No workspace folder found.");
+    return;
   }
-  const lines = `${findCodeLine(start.line)}-${findCodeLine(end.line)}`;
-  const characters = `${findCodeLine(start.character)}-${findCodeLine(
-    end.character
-  )}`;
-  const csvEntry = `${fileName},${lines},${characters},${comment}\n`;
-  fs.appendFileSync(csvPath.fsPath, csvEntry);
+  return path.join(workspaceFolder.uri.fsPath, "comments.csv");
+}
+
+function saveInCSV(fileName: string, selection: Selection, comment: string) {
+  const csvFilePath = getCSVFilePath();
+
+  if (!csvFilePath) {
+    window.showErrorMessage("CSV file not found");
+    return;
+  }
+
+  try {
+    // Make CSV if it doesn't exist
+    if (!fs.existsSync(csvFilePath)) {
+      fs.writeFileSync(csvFilePath, header);
+    }
+
+    const { start, end } = selection;
+    const lines = `${start.line + 1}-${end.line + 1}`;
+    const characters = `${start.character + 1}-${end.character + 1}`;
+    const csvEntry = `${fileName},${lines},${characters},${comment}\n`;
+    fs.appendFileSync(csvFilePath, csvEntry);
+  } catch (error) {
+    window.showErrorMessage(`Error saving to CSV file: ${error}`);
+    return;
+  }
 }
 
 function readFromCSV() {
-  const csvPath = path.resolve(__dirname, "../comments.csv");
+  const docUri = activeEditor.document.uri;
+  const workspaceFolder = workspace.getWorkspaceFolder(docUri);
+  if (!workspaceFolder) {
+    window.showErrorMessage("No workspace folder found.");
+    return;
+  }
+  const csvFolderPath = workspaceFolder.uri.fsPath;
+  const csvFilePath = path.join(csvFolderPath, "comments.csv");
 
-  const stream = fs.createReadStream(csvPath, {
+  if (!fs.existsSync(csvFilePath)) {
+    console.error("CSV file does not exist.");
+    return Promise.resolve();
+  }
+
+  const stream = fs.createReadStream(csvFilePath, {
     encoding: "utf8",
     start: header.length,
   });
@@ -181,22 +210,18 @@ async function getComments() {
     const { lineStart, lineEnd, characterStart, characterEnd } = comment;
     const start = new Position(lineStart - 1, characterStart - 1);
     const end = new Position(lineEnd - 1, characterEnd - 1);
-    const lineLength = activeEditor.document.lineAt(lineEnd).text.length;
-    const lineLengthPos = new Position(lineEnd - 1, lineLength + 1);
+    const lineLength = activeEditor.document.lineAt(lineEnd - 1).text.length;
+    const lineStartPosition = new Position(lineEnd - 1, 0);
+    const lineEndPosition = new Position(lineEnd - 1, lineLength);
 
-    iconDecoration.push({ range: new Range(end, lineLengthPos) });
+    iconDecoration.push({
+      range: new Range(lineStartPosition, lineEndPosition),
+    });
     highlightDecoration.push({ range: new Range(start, end) });
   });
 
-  // Only set decorations if the active editor is the same as before
-  if (window.activeTextEditor === activeEditor) {
-    activeEditor.setDecorations(icon, iconDecoration);
-    activeEditor.setDecorations(highlight, highlightDecoration);
-  }
-}
-
-function findCodeLine(codeLine: number): string {
-  return (codeLine + 1).toString();
+  activeEditor.setDecorations(icon, iconDecoration);
+  activeEditor.setDecorations(highlight, highlightDecoration);
 }
 
 export function deactivate() {
