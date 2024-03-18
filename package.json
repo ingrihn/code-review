@@ -1,7 +1,7 @@
 {
   "name": "collabrate",
   "displayName": "CollabRate",
-  "description": "",
+  "description": "This is the README for your extension \"collabrate\". After writing up a brief description, we recommend including the following sections.",
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.86.0"
@@ -9,13 +9,16 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": [],
+  "activationEvents": [
+    "onDidChangeActiveTextEditor",
+    "onStartupFinished"
+  ],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
       {
         "command": "extension.showCommentSidebar",
-        "title": "CollabRate"
+        "title": "CollabRate: Add Comment"
       }
     ],
     "menus": {
@@ -76,6 +79,13 @@
     "typescript": "^5.3.3"
   },
   "dependencies": {
-    "bootstrap": "^5.3.2"
-  }
+    "bootstrap": "^5.3.2",
+    "fast-csv": "^5.0.1"
+  },
+  "directories": {
+    "lib": "lib"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
 }
