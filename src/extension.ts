@@ -21,8 +21,6 @@ class InlineCommentProvider implements vscode.TreeDataProvider<InlineComment> {
     this._onDidChangeTreeData.fire(comment);
   }
 
-  // constructor(private workspaceRoot: string) {}
-
   getTreeItem(element: InlineComment): vscode.TreeItem {
     return element;
   } 
@@ -60,6 +58,9 @@ class GeneralViewProvider implements vscode.WebviewViewProvider {
 			enableScripts: true,
 		};
 
+    const rubricsJson = getRubricsJson();
+    webviewView.webview.postMessage({ command: 'rubricsJson', data: rubricsJson });
+
     const cssUri = webviewView.webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'src', 'custom.css'));
 
     const htmlFilePath = vscode.Uri.joinPath(
@@ -67,9 +68,6 @@ class GeneralViewProvider implements vscode.WebviewViewProvider {
       "src",
       "general-comments.html"
     );
-
-    // const rubricsJson = getRubricsJson();
-    // webviewView.webview.postMessage({ command: 'rubricsJson', data: rubricsJson });
 
     fs.readFile(htmlFilePath.fsPath, "utf-8", (err, data) => {
       if (err) {
@@ -81,29 +79,11 @@ class GeneralViewProvider implements vscode.WebviewViewProvider {
   
       if (this._view) {
         this._view.webview.html = data.replace("${cssPath}", cssUri.toString());
-
-        this._view.webview.postMessage({ command: 'webviewReady' });
-        const rubricsJson = getRubricsJson();
-        this._view.webview.postMessage({ command: 'rubricsJson', data: rubricsJson });
-
-        // this._view.webview.onDidReceiveMessage((message) => {
-        //   if (message.command === 'webviewReady') {
-        //     this._view?.webview.postMessage({ command: 'rubricsJson', data: rubricsJson });
       }
-
-
-		// webviewView.webview.onDidReceiveMessage(data => {
-		// 	switch (data.type) {
-		// 		case 'colorSelected':
-		// 			{
-		// 				vscode.window.activeTextEditor?.insertSnippet(new vscode.SnippetString(`#${data.value}`));
-		// 				break;
-		// 			}
-		// 	}
-		// });
-  });
+    });
+  }
 }
-}
+
 
 let treeView: vscode.TreeView<InlineComment>;
 let panel: vscode.WebviewPanel;
@@ -143,7 +123,6 @@ export function activate(context: vscode.ExtensionContext) {
         "src",
         "webview.html"
       );
-      const rubricsJson = getRubricsJson();
       
       fs.readFile(htmlFilePath.fsPath, "utf-8", (err, data) => {
         if (err) {
@@ -152,16 +131,13 @@ export function activate(context: vscode.ExtensionContext) {
           );
           return;
         }
-        generalViewProvider.getView()?.webview.postMessage({ command: 'rubricsJson', data: rubricsJson });
         panel.webview.html = data.replace("${cssPath}", cssUri.toString());
-        
       });
-}));}
-
-//const fs = require('fs');
+}));
+}
 
 function getRubricsJson() {
-  const filePath = '/Users/Ingri/Documents/collabrate/rubrics.json'; // Update with the correct path
+  const filePath = '/Users/Ingri/Documents/collabrate/rubrics.json'; 
   try {
     const data = fs.readFileSync(filePath, 'utf8');
     return JSON.parse(data);
@@ -170,7 +146,6 @@ function getRubricsJson() {
     return null;
   }
 }
-
 
 
 export function deactivate() {

@@ -30,119 +30,118 @@
       crossorigin="anonymous"
     ></script>
     <script>
-      // document.addEventListener("DOMContentLoaded", function () {
-      //   console.log("helluu");
-      //   // Fetch the JSON data
-      //   fetch("../rubrics.json") ///Users/Ingri/Documents/collabrate/rubrics.json
-      //     .then((response) => response.json())
-      //     .then((data) => {
-      //       // Assuming only one rubric for simplicity, you can modify it for multiple rubrics
-      //       const rubric = data.rubrics[0];
-
-      //       // Update the HTML content
-      //       document.getElementById("rubricTitle").innerText = rubric.title;
-      //       document.getElementById("rubricDescription").innerText =
-      //         rubric.description;
-      //     })
-      //     .catch((error) => console.error("Error fetching JSON:", error));
-      // });
+      let message;
+      let rubricsJson;
 
       window.addEventListener("message", (event) => {
-        console.log("klart");
-        const message = event.data;
-        const rubricsJson = message.data;
-        const rubricsContainer = document.getElementById("rubricContainer");
-        // if (message.command === "webviewReady") {
-        //   // Perform actions when the webview view is ready
-        //   console.log("webview is ready");
+        console.log("klart1");
+        message = event.data;
+        rubricsJson = message.data;
         if (message.command === "rubricsJson") {
           if (
             rubricsJson &&
             rubricsJson.rubrics.length > 0 &&
             Array.isArray(rubricsJson.rubrics)
           ) {
-            rubricsContainer.innerHTML = "";
-            rubricsJson.rubrics.forEach((rubric) => {
-              const rubricElement = document.createElement("div");
-              rubricElement.innerHTML = `
-                <div class="rubric">
-                  <h4 id="rubricTitle">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="13"
-                      height="13"
-                      fill="currentColor"
-                      class="bi bi-search"
-                      viewBox="0 0 16 16"
-                    >
-                      <path
-                        d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0"
-                      />
-                    </svg>
-                    ${rubric.title}
-                  </h4>
-                  <p id="rubricDescription">
-                    ${rubric.description}
-                  </p>
-                  <textarea
-                    class="commentBox"
-                    placeholder="Skriv her."
-                    cols="40"
-                    rows="4"
-                  ></textarea
-                  ><br />
-
-                  <div class="flex-container">
-                    <div class="radio-button-group">
-                      <label class="container"
-                        >1
-                        <input class="radio-button" type="radio" name="radio" />
-                        <span class="checkmark"></span>
-                      </label>
-
-                      <label class="container"
-                        >2
-                        <input class="radio-button" type="radio" name="radio" />
-                        <span class="checkmark"></span>
-                      </label>
-
-                      <label class="container"
-                        >3
-                        <input class="radio-button" type="radio" name="radio" />
-                        <span class="checkmark"></span>
-                      </label>
-
-                      <label class="container"
-                        >4
-                        <input class="radio-button" type="radio" name="radio" />
-                        <span class="checkmark"></span>
-                      </label>
-
-                      <label class="container"
-                        >5
-                        <input class="radio-button" type="radio" name="radio" />
-                        <span class="checkmark"></span>
-                      </label>
-                    </div>
-                  </div>
-              </div>
-              <br />
-              `;
-              rubricsContainer.appendChild(rubricElement);
-            });
+            localStorage.setItem("rubricsJson", JSON.stringify(rubricsJson));
+            console.log(localStorage.getItem("rubricsJson"));
+            loadHTML(rubricsJson);
           }
         }
       });
 
-      function saveDraft() {
-        const vscode = acquireVsCodeApi();
-        let rubrics = Array.from(document.getElementsByClassName("rubric"));
-        for (let i = 0; i < rubrics.length; i++) {
-          const textarea = Array.from(rubrics[i].children)[1];
-          const text = textarea.value;
-          vscode.postMessage({ command: "getGeneral" + i, text: text });
+      document.addEventListener("DOMContentLoaded", () => {
+        console.log("klart2");
+        rubricsJson = JSON.parse(localStorage.getItem("rubricsJson"));
+        console.log(rubricsJson);
+        if (rubricsJson && Array.isArray(rubricsJson.rubrics)) {
+          console.log("yey");
+          loadHTML(rubricsJson);
         }
+      });
+
+      function loadHTML(rubrics) {
+        const rubricsContainer = document.getElementById("rubricContainer");
+        rubricsContainer.innerHTML = "";
+
+        rubrics.rubrics.forEach((rubric) => {
+          const rubricElement = document.createElement("div");
+          rubricElement.innerHTML = `
+                      <div class="rubric">
+                        <h4 id="rubricTitle">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="13"
+                            height="13"
+                            fill="currentColor"
+                            class="bi bi-search"
+                            viewBox="0 0 16 16"
+                          >
+                            <path
+                              d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0"
+                            />
+                          </svg>
+                          ${rubric.title}
+                        </h4>
+                        <p id="rubricDescription">
+                          ${rubric.description}
+                        </p>
+                        <textarea
+                          class="commentBox"
+                          placeholder="Skriv her."
+                          cols="40"
+                          rows="4"
+                        ></textarea
+                        ><br />
+
+                        <div class="flex-container">
+                          <div class="radio-button-group">
+                            <label class="container"
+                              >1
+                              <input class="radio-button" type="radio" name="radio" />
+                              <span class="checkmark"></span>
+                            </label>
+
+                            <label class="container"
+                              >2
+                              <input class="radio-button" type="radio" name="radio" />
+                              <span class="checkmark"></span>
+                            </label>
+
+                            <label class="container"
+                              >3
+                              <input class="radio-button" type="radio" name="radio" />
+                              <span class="checkmark"></span>
+                            </label>
+
+                            <label class="container"
+                              >4
+                              <input class="radio-button" type="radio" name="radio" />
+                              <span class="checkmark"></span>
+                            </label>
+
+                            <label class="container"
+                              >5
+                              <input class="radio-button" type="radio" name="radio" />
+                              <span class="checkmark"></span>
+                            </label>
+                          </div>
+                        </div>
+                    </div>
+                    <br />
+                    `;
+          rubricsContainer.appendChild(rubricElement);
+        });
       }
+      // function saveDraft() {
+      //   const vscode = acquireVsCodeApi();
+      //   let rubrics = Array.from(document.getElementsByClassName("rubric"));
+      //   for (let i = 0; i < rubrics.length; i++) {
+      //     const textarea = Array.from(rubrics[i].children)[1];
+      //     const text = textarea.value;
+      //     vscode.postMessage({ command: "getGeneral" + i, text: text });
+      //   }
+      // }
     </script>
   </body>
 </html>

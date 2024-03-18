@@ -12025,4 +12025,10 @@ textarea {
   background: #8CBEB2;
 }
 
+@media (max-width: 235px) {
+  .radio-button-group {
+    flex-direction: column;
+  }
+}
+
 /*# sourceMappingURL=custom.css.map */
