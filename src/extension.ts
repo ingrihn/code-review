@@ -21,28 +21,27 @@ import readline from "readline";
 
 interface CommentType {
   fileName: string;
-  lineStart: number;
-  lineEnd: number;
-  characterStart: number;
-  characterEnd: number;
+  start: {
+    line: number;
+    character: number;
+  };
+  end: {
+    line: number;
+    character: number;
+  };
   comment: string;
 }
 
 let panel: WebviewPanel;
 let activeEditor: TextEditor;
-let iconDecoration: DecorationOptions[];
-let highlightDecoration: DecorationOptions[];
+let iconDecoration: DecorationOptions[] = [];
+let highlightDecoration: DecorationOptions[] = [];
 let icon: TextEditorDecorationType;
 let highlight: TextEditorDecorationType;
-let ctx: ExtensionContext;
-const header: string = "file,lines,characters,comment\n";
-let comments: CommentType[];
+let comments: CommentType[] = [];
 
 export function activate(context: ExtensionContext) {
-  ctx = context;
-  iconDecoration = [];
   activeEditor = window.activeTextEditor ?? window.visibleTextEditors[0];
-  comments = [];
   icon = window.createTextEditorDecorationType({
     after: {
       contentIconPath: context.asAbsolutePath(path.join("src", "comment.svg")),
@@ -103,93 +102,66 @@ function handleMessageFromWebview(message: any) {
     case "getText":
       const { text: commentText } = message;
       const fileName = activeEditor.document.fileName;
-      saveInCSV(fileName, activeEditor.selection, commentText);
+      saveToFile(fileName, activeEditor.selection, commentText);
       deactivate();
   }
 }
 
-function getCSVFilePath() {
-  const docUri = activeEditor.document.uri;
-  const workspaceFolder = workspace.getWorkspaceFolder(docUri);
-  if (!workspaceFolder) {
-    window.showErrorMessage("No workspace folder found.");
-    return;
-  }
-  return path.join(workspaceFolder.uri.fsPath, "comments.csv");
-}
+function saveToFile(
+  fileName: string,
+  selection: Selection,
+  commentText: string
+) {
+  const jsonFilePath = getFilePath();
 
-function saveInCSV(fileName: string, selection: Selection, comment: string) {
-  const csvFilePath = getCSVFilePath();
-
-  if (!csvFilePath) {
-    window.showErrorMessage("CSV file not found");
+  if (!jsonFilePath) {
+    window.showErrorMessage("JSON file not found");
     return;
   }
 
   try {
-    // Make CSV if it doesn't exist
-    if (!fs.existsSync(csvFilePath)) {
-      fs.writeFileSync(csvFilePath, header);
-    }
+    const commentData: CommentType = {
+      fileName: fileName,
+      start: {
+        line: selection.start.line + 1,
+        character: selection.start.character + 1,
+      },
+      end: {
+        line: selection.end.line + 1,
+        character: selection.end.character + 1,
+      },
+      comment: commentText,
+    };
 
-    const { start, end } = selection;
-    const lines = `${start.line + 1}-${end.line + 1}`;
-    const characters = `${start.character + 1}-${end.character + 1}`;
-    const csvEntry = `${fileName},${lines},${characters},${comment}\n`;
-    fs.appendFileSync(csvFilePath, csvEntry);
+    const dataFromFile = JSON.parse(fs.readFileSync(jsonFilePath, "utf-8"));
+    dataFromFile.comments.push(commentData);
+    const commentJson = JSON.stringify(dataFromFile);
+    fs.writeFileSync(jsonFilePath, commentJson);
   } catch (error) {
-    window.showErrorMessage(`Error saving to CSV file: ${error}`);
+    window.showErrorMessage(`Error saving to file: ${error}`);
     return;
   }
 }
 
-function readFromCSV() {
-  const docUri = activeEditor.document.uri;
-  const workspaceFolder = workspace.getWorkspaceFolder(docUri);
-  if (!workspaceFolder) {
-    window.showErrorMessage("No workspace folder found.");
+async function readFromFile() {
+  const jsonFilePath = getFilePath();
+
+  if (!jsonFilePath) {
+    window.showErrorMessage("File not found");
     return;
   }
-  const csvFolderPath = workspaceFolder.uri.fsPath;
-  const csvFilePath = path.join(csvFolderPath, "comments.csv");
 
-  if (!fs.existsSync(csvFilePath)) {
-    console.error("CSV file does not exist.");
-    return Promise.resolve();
+  try {
+    const jsonData = await fs.promises.readFile(jsonFilePath, "utf-8");
+    const commentsFromJson = JSON.parse(jsonData).comments;
+    commentsFromJson.forEach((comment: CommentType) => comments.push(comment));
+  } catch (error: any) {
+    if (error.code === "ENOENT") {
+      fs.writeFileSync(jsonFilePath, '{"comments": []}'); // Makes new file if it doesnt exist
+    } else {
+      console.error(error);
+    }
   }
-
-  const stream = fs.createReadStream(csvFilePath, {
-    encoding: "utf8",
-    start: header.length,
-  });
-
-  const rl = readline.createInterface({ input: stream });
-  return new Promise<void>((resolve, reject) => {
-    rl.on("line", (row) => {
-      const [fileName, lines, characters, comment] = row.split(",");
-      const [lineStart, lineEnd] = lines.split("-").map(Number);
-      const [characterStart, characterEnd] = characters.split("-").map(Number);
-
-      const commentObject: CommentType = {
-        fileName: fileName.trim(),
-        lineStart,
-        lineEnd,
-        characterStart,
-        characterEnd,
-        comment: comment.trim(),
-      };
-
-      comments.push(commentObject);
-    });
-
-    rl.on("close", () => {
-      resolve();
-    });
-
-    rl.on("error", (err) => {
-      reject(err);
-    });
-  });
 }
 
 async function getComments() {
@@ -199,29 +171,39 @@ async function getComments() {
   activeEditor.setDecorations(icon, []);
   activeEditor.setDecorations(highlight, []);
 
-  await readFromCSV();
+  await readFromFile(); // Adds comments from JSON to array
 
   const fileName: string = activeEditor.document.fileName;
   const fileComments = comments.filter(
     (comment) => comment.fileName === fileName
   );
 
-  fileComments.forEach((comment) => {
-    const { lineStart, lineEnd, characterStart, characterEnd } = comment;
-    const start = new Position(lineStart - 1, characterStart - 1);
-    const end = new Position(lineEnd - 1, characterEnd - 1);
-    const lineLength = activeEditor.document.lineAt(lineEnd - 1).text.length;
-    const lineStartPosition = new Position(lineEnd - 1, 0);
-    const lineEndPosition = new Position(lineEnd - 1, lineLength);
-
+  fileComments.forEach((comment: CommentType) => {
+    const { start, end } = comment;
+    const startPos = new Position(start.line - 1, start.character - 1);
+    const endPos = new Position(end.line - 1, end.character - 1);
+    const lineLength = activeEditor.document.lineAt(end.line - 1).text.length;
+    const lineStartPosition = new Position(end.line - 1, 0);
+    const lineEndPosition = new Position(end.line - 1, lineLength);
     iconDecoration.push({
       range: new Range(lineStartPosition, lineEndPosition),
     });
-    highlightDecoration.push({ range: new Range(start, end) });
+    highlightDecoration.push({ range: new Range(startPos, endPos) });
   });
 
   activeEditor.setDecorations(icon, iconDecoration);
   activeEditor.setDecorations(highlight, highlightDecoration);
+}
+
+function getFilePath() {
+  const fileName = "comments.json";
+  const docUri = activeEditor.document.uri;
+  const workspaceFolder = workspace.getWorkspaceFolder(docUri);
+  if (!workspaceFolder) {
+    window.showErrorMessage("No workspace folder found.");
+    return;
+  }
+  return path.join(workspaceFolder.uri.fsPath, fileName);
 }
 
 export function deactivate() {
