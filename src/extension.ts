@@ -7,7 +7,6 @@ import {
   Range,
   Selection,
   TextEditor,
-  TextEditorDecorationType,
   Uri,
   ViewColumn,
   WebviewPanel,
@@ -32,14 +31,14 @@ interface CommentType {
 }
 
 let panel: WebviewPanel;
-let activeEditor: TextEditor;
-let icon: TextEditorDecorationType;
-let highlight: TextEditorDecorationType;
+let activeEditor: TextEditor | undefined;
 
 export async function activate(context: ExtensionContext) {
-  activeEditor = window.activeTextEditor ?? window.visibleTextEditors[0];
+  activeEditor = window.activeTextEditor;
   const filePath = getFilePath("comments.json");
-  await showFileComments(filePath, context);
+  if (filePath) {
+    showFileComments(filePath, context);
+  }
 
   context.subscriptions.push(
     commands.registerCommand("extension.showCommentSidebar", () => {
@@ -77,7 +76,7 @@ export async function activate(context: ExtensionContext) {
 
   context.subscriptions.push(
     window.onDidChangeActiveTextEditor((editor) => {
-      if (editor) {
+      if (editor && filePath) {
         activeEditor = editor;
         showFileComments(filePath, context);
       }
@@ -89,18 +88,58 @@ function handleMessageFromWebview(message: any) {
   switch (message.command) {
     case "getText":
       const filePath = getFilePath("comments.json");
-      const fileName = activeEditor.document.fileName;
-      const { commentText } = message;
-      saveToFile(filePath, fileName, activeEditor.selection, commentText);
-      deactivate();
+      if (filePath && activeEditor) {
+        const fileName = activeEditor.document.fileName;
+        const { text: commentText } = message;
+        saveToFile(filePath, fileName, activeEditor.selection, commentText);
+        deactivate();
+      }
+  }
+}
+
+function getFilePath(fileName: string) {
+  if (!activeEditor) {
+    // window.showErrorMessage("No file is opened.");
+    return;
+  }
+  const docUri = activeEditor.document.uri;
+  const workspaceFolder = workspace.getWorkspaceFolder(docUri);
+  if (!workspaceFolder) {
+    window.showErrorMessage(
+      "No workspace folder found. Choose a project to review."
+    );
+    return;
+  }
+  return path.join(workspaceFolder.uri.fsPath, fileName);
+}
+
+async function readFromFile(filePath: string): Promise<CommentType[]> {
+  try {
+    const jsonData = await fs.promises.readFile(filePath, "utf-8");
+    const { comments } = JSON.parse(jsonData);
+    return comments;
+  } catch (error: any) {
+    if (error.code === "ENOENT") {
+      await fs.promises.writeFile(filePath, '{"comments": []}');
+      return [];
+    } else {
+      console.error(error);
+      return [];
+    }
   }
 }
 
 async function getComments(filePath: string): Promise<CommentType[]> {
   try {
-    const existingComments = await readFromFile(filePath);
-    const fileName = activeEditor.document.fileName;
-    return existingComments.filter((comment) => comment.fileName === fileName);
+    if (activeEditor) {
+      const fileName = activeEditor.document.fileName;
+      const existingComments = await readFromFile(filePath);
+      return existingComments.filter(
+        (comment) => comment.fileName === fileName
+      );
+    } else {
+      return [];
+    }
   } catch (error) {
     console.error(`Error getting comments: ${error}`);
     return [];
@@ -108,6 +147,10 @@ async function getComments(filePath: string): Promise<CommentType[]> {
 }
 
 async function showFileComments(filePath: string, context: ExtensionContext) {
+  if (!activeEditor) {
+    return;
+  }
+
   const fileComments = await getComments(filePath);
   const iconDecoration: DecorationOptions[] = [];
   const highlightDecoration: DecorationOptions[] = [];
@@ -116,7 +159,9 @@ async function showFileComments(filePath: string, context: ExtensionContext) {
     const { start, end } = comment;
     const startPos = new Position(start.line - 1, start.character - 1);
     const endPos = new Position(end.line - 1, end.character - 1);
-    const lineLength = activeEditor.document.lineAt(end.line - 1).text.length;
+    const lineLength =
+      activeEditor?.document.lineAt(end.line - 1).text.length ??
+      end.character - 1; // Get the end of the selected line, otherwise end of selection
     const lineStartPosition = new Position(end.line - 1, 0);
     const lineEndPosition = new Position(end.line - 1, lineLength);
 
@@ -139,22 +184,6 @@ async function showFileComments(filePath: string, context: ExtensionContext) {
   activeEditor.setDecorations(highlight, highlightDecoration);
 }
 
-async function readFromFile(filePath: string): Promise<CommentType[]> {
-  try {
-    const jsonData = await fs.promises.readFile(filePath, "utf-8");
-    const { comments } = JSON.parse(jsonData);
-    return comments;
-  } catch (error: any) {
-    if (error.code === "ENOENT") {
-      await fs.promises.writeFile(filePath, '{"comments": []}');
-      return [];
-    } else {
-      console.error(error);
-      return [];
-    }
-  }
-}
-
 async function saveToFile(
   filePath: string,
   fileName: string,
@@ -162,7 +191,7 @@ async function saveToFile(
   commentText: string
 ) {
   try {
-    const commentData: CommentType = {
+    const newComment: CommentType = {
       fileName,
       start: {
         line: selection.start.line + 1,
@@ -176,22 +205,12 @@ async function saveToFile(
     };
 
     const existingComments = await readFromFile(filePath);
-    existingComments.push(commentData);
+    existingComments.push(newComment);
     const commentJson = JSON.stringify({ comments: existingComments });
     await fs.promises.writeFile(filePath, commentJson);
   } catch (error) {
     console.error(`Error saving to file: ${error}`);
   }
-}
-
-function getFilePath(fileName: string) {
-  const docUri = activeEditor.document.uri;
-  const workspaceFolder = workspace.getWorkspaceFolder(docUri);
-  if (!workspaceFolder) {
-    window.showErrorMessage("No workspace folder found.");
-    return "";
-  }
-  return path.join(workspaceFolder.uri.fsPath, fileName);
 }
 
 export function deactivate() {
