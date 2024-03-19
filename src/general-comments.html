@@ -34,7 +34,6 @@
       let rubricsJson;
 
       window.addEventListener("message", (event) => {
-        console.log("klart1");
         message = event.data;
         rubricsJson = message.data;
         if (message.command === "rubricsJson") {
@@ -43,20 +42,8 @@
             rubricsJson.rubrics.length > 0 &&
             Array.isArray(rubricsJson.rubrics)
           ) {
-            localStorage.setItem("rubricsJson", JSON.stringify(rubricsJson));
-            console.log(localStorage.getItem("rubricsJson"));
             loadHTML(rubricsJson);
           }
-        }
-      });
-
-      document.addEventListener("DOMContentLoaded", () => {
-        console.log("klart2");
-        rubricsJson = JSON.parse(localStorage.getItem("rubricsJson"));
-        console.log(rubricsJson);
-        if (rubricsJson && Array.isArray(rubricsJson.rubrics)) {
-          console.log("yey");
-          loadHTML(rubricsJson);
         }
       });
 
@@ -133,15 +120,6 @@
           rubricsContainer.appendChild(rubricElement);
         });
       }
-      // function saveDraft() {
-      //   const vscode = acquireVsCodeApi();
-      //   let rubrics = Array.from(document.getElementsByClassName("rubric"));
-      //   for (let i = 0; i < rubrics.length; i++) {
-      //     const textarea = Array.from(rubrics[i].children)[1];
-      //     const text = textarea.value;
-      //     vscode.postMessage({ command: "getGeneral" + i, text: text });
-      //   }
-      // }
     </script>
   </body>
 </html>

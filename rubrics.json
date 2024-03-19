@@ -7,7 +7,7 @@
         },
         {
             "title": "Hvordan vil du vurdere dokumentasjonen?",
-            "description": "Gi en vurdering av dokumentasjonen tilknyttet kjøring og bygging av prosjektet, arkitekturen, etc.",
+            "description": "Her kan du for eksempel se på beskrivelsen av bygging og kjøring av prosjektet, arkitektur, kommentarer i koden, osv.",
             "has_score": "true"
         }
     ]

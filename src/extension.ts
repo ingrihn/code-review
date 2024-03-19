@@ -22,7 +22,6 @@ import {
   WebviewView,
   WebviewViewResolveContext,
   CancellationToken,
-  TreeView
 } from "vscode";
 import path from "path";
 
@@ -81,9 +80,6 @@ class GeneralViewProvider implements WebviewViewProvider {
 			enableScripts: true,
 		};
 
-    const rubricsJson = getRubricsJson();
-    webviewView.webview.postMessage({ command: 'rubricsJson', data: rubricsJson });
-
     const cssUri = webviewView.webview.asWebviewUri(Uri.joinPath(this._extensionUri, 'src', 'custom.css'));
 
     const htmlFilePath = Uri.joinPath(
@@ -92,7 +88,7 @@ class GeneralViewProvider implements WebviewViewProvider {
       "general-comments.html"
     );
 
-    fs.readFile(htmlFilePath.fsPath, "utf-8", (err, data) => {
+    fs.readFile(htmlFilePath.fsPath, "utf-8", async (err, data) => {
       if (err) {
         window.showErrorMessage(
           `Error reading HTML file: ${err.message}`
@@ -101,24 +97,40 @@ class GeneralViewProvider implements WebviewViewProvider {
       }
   
       if (this._view) {
-        this._view.webview.html = data.replace("${cssPath}", cssUri.toString());
+        const rubricsJson = await getRubricsJson();
+        webviewView.webview.html = data.replace("${cssPath}", cssUri.toString());
+        webviewView.webview.postMessage({ command: 'rubricsJson', data: rubricsJson });
       }
     });
   }
 }
 
 
-let treeView: TreeView<InlineComment>;
 let panel: WebviewPanel;
 let activeEditor: TextEditor;
+let generalViewProvider: GeneralViewProvider;
 
 export async function activate(context: ExtensionContext) {
   const treeDataProvider = new InlineCommentProvider();
   const viewId = 'collabrate-inline';
-  const generalViewProvider = new GeneralViewProvider(context.extensionUri);
+  generalViewProvider = new GeneralViewProvider(context.extensionUri);
 
-  context.subscriptions.push(
-		window.registerWebviewViewProvider(GeneralViewProvider.viewType, generalViewProvider));
+
+context.subscriptions.push(
+  window.registerWebviewViewProvider(GeneralViewProvider.viewType, {
+      resolveWebviewView: (webviewView, _context, _token) => {
+          const disposable = webviewView.onDidChangeVisibility(async e => {
+            const rubricsJson = await getRubricsJson();
+            await webviewView.webview.postMessage({ command: 'rubricsJson', data: rubricsJson });
+          });
+          context.subscriptions.push (disposable);
+          return generalViewProvider.resolveWebviewView(webviewView, _context, _token);
+      }
+  })
+);
+
+
+ 
 
   window.registerTreeDataProvider(
     viewId,
@@ -128,6 +140,8 @@ export async function activate(context: ExtensionContext) {
   activeEditor = window.activeTextEditor ?? window.visibleTextEditors[0];
   const filePath = getFilePath("comments.json");
   await showFileComments(filePath, context);
+
+  
 
   context.subscriptions.push(
     commands.registerCommand("extension.showCommentSidebar", () => {
@@ -160,12 +174,11 @@ export async function activate(context: ExtensionContext) {
           undefined,
           context.subscriptions
         );
-
-        
-      
       });
     })
-  )
+  );
+
+
   context.subscriptions.push(
     window.onDidChangeActiveTextEditor((editor) => {
       if (editor) {
@@ -174,7 +187,7 @@ export async function activate(context: ExtensionContext) {
       }
     })
   );
-  }
+}
 
 
 
@@ -302,9 +315,7 @@ function getFilePath(fileName: string) {
 }
 
 function getRubricsJson() {
-  const filePath = '../rubrics.json';
-  
-  // const cssPath = Uri.joinPath(context.extensionUri, "src", "custom.css");
+  const filePath = path.resolve(__dirname, "../rubrics.json");
   try {
     const data = fs.readFileSync(filePath, 'utf8');
     return JSON.parse(data);
@@ -319,8 +330,5 @@ export function deactivate() {
   if (panel) {
     panel.dispose();
     activeEditor = window.visibleTextEditors[0];
-  }
-  if (treeView) {
-    treeView.dispose();
   }
 }
