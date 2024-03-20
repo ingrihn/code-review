@@ -97,7 +97,8 @@ class GeneralViewProvider implements WebviewViewProvider {
       }
   
       if (this._view) {
-        const rubricsJson = await getRubricsJson();
+        const filePath = getFilePath("rubrics.json");
+        const rubricsJson = await getRubricsJson(filePath);
         webviewView.webview.html = data.replace("${cssPath}", cssUri.toString());
         webviewView.webview.postMessage({ command: 'rubricsJson', data: rubricsJson });
       }
@@ -120,7 +121,8 @@ context.subscriptions.push(
   window.registerWebviewViewProvider(GeneralViewProvider.viewType, {
       resolveWebviewView: (webviewView, _context, _token) => {
           const disposable = webviewView.onDidChangeVisibility(async e => {
-            const rubricsJson = await getRubricsJson();
+            const filePath = getFilePath("rubrics.json");
+            const rubricsJson = await getRubricsJson(filePath);
             await webviewView.webview.postMessage({ command: 'rubricsJson', data: rubricsJson });
           });
           context.subscriptions.push (disposable);
@@ -305,8 +307,12 @@ async function saveToFile(
 }
 
 function getFilePath(fileName: string) {
-  const docUri = activeEditor.document.uri;
-  const workspaceFolder = workspace.getWorkspaceFolder(docUri);
+  const workspaceFolders = workspace.workspaceFolders;
+  if (!workspaceFolders) {
+    window.showErrorMessage("No workspace folder found.");
+    return "";
+  }
+  const workspaceFolder = workspaceFolders[0];
   if (!workspaceFolder) {
     window.showErrorMessage("No workspace folder found.");
     return "";
@@ -314,14 +320,18 @@ function getFilePath(fileName: string) {
   return path.join(workspaceFolder.uri.fsPath, fileName);
 }
 
-function getRubricsJson() {
-  const filePath = path.resolve(__dirname, "../rubrics.json");
+async function getRubricsJson(filePath: string) {
   try {
-    const data = fs.readFileSync(filePath, 'utf8');
+    const data = await fs.promises.readFile(filePath, "utf-8");
     return JSON.parse(data);
-  } catch (error) {
-    console.error('Error reading rubrics.json:', error);
-    return null;
+  } catch (error: any) {
+    if (error.code === "ENOENT") {
+      await fs.promises.writeFile(filePath, '{"rubrics": []}');
+      return [];
+    } else {
+      console.error(error);
+      return [];
+    }
   }
 }
 

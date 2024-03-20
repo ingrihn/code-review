@@ -37,11 +37,7 @@
         message = event.data;
         rubricsJson = message.data;
         if (message.command === "rubricsJson") {
-          if (
-            rubricsJson &&
-            rubricsJson.rubrics.length > 0 &&
-            Array.isArray(rubricsJson.rubrics)
-          ) {
+          if (rubricsJson && Array.isArray(rubricsJson.rubrics)) {
             loadHTML(rubricsJson);
           }
         }
