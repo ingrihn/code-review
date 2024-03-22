@@ -44,7 +44,8 @@
       </div>
     </div>
     <div>
-      <textarea placeholder="Skriv her." id="textBox"></textarea> <br />
+      <textarea placeholder="Skriv her." id="textBox"></textarea>
+      <br />
       <button type="button" class="btn btn-primary btn-sm" onclick="sendText()">
         Legg til
       </button>
@@ -55,6 +56,8 @@
       crossorigin="anonymous"
     ></script>
     <script>
+      const textArea = document.getElementById("textBox");
+      textArea.focus();
       function sendText() {
         const vscode = acquireVsCodeApi();
         const text = document.getElementById("textBox").value;

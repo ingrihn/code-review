@@ -26,6 +26,20 @@ import {
 import path from "path";
 
 
+interface CommentType {
+  fileName: string;
+  start: {
+    line: number;
+    character: number;
+  };
+  end: {
+    line: number;
+    character: number;
+  };
+  comment: string;
+}
+
+
 class InlineComment extends TreeItem {
   constructor(
     public readonly label: string,
@@ -110,12 +124,31 @@ class GeneralViewProvider implements WebviewViewProvider {
 let panel: WebviewPanel;
 let activeEditor: TextEditor;
 let generalViewProvider: GeneralViewProvider;
+let iconDecoration: DecorationOptions[] = [];
+let highlightDecoration: DecorationOptions[] = [];
+let icon: TextEditorDecorationType;
+let highlight: TextEditorDecorationType;
+const commentsFile: string = "comments.json";
 
 export async function activate(context: ExtensionContext) {
   const treeDataProvider = new InlineCommentProvider();
   const viewId = 'collabrate-inline';
   generalViewProvider = new GeneralViewProvider(context.extensionUri);
+  activeEditor = window.activeTextEditor ?? window.visibleTextEditors[0];
+  icon = window.createTextEditorDecorationType({
+    after: {
+      contentIconPath: context.asAbsolutePath(path.join("src", "comment.svg")),
+      margin: "5px",
+    },
+  });
+  highlight = window.createTextEditorDecorationType({
+    backgroundColor: "#8CBEB260",
+  });
 
+  const filePath = getFilePath("comments.json");
+  if (filePath) {
+    showComments(filePath);
+  }
 
 context.subscriptions.push(
   window.registerWebviewViewProvider(GeneralViewProvider.viewType, {
@@ -130,20 +163,11 @@ context.subscriptions.push(
       }
   })
 );
-
-
  
-
   window.registerTreeDataProvider(
     viewId,
     treeDataProvider
   );
-
-  activeEditor = window.activeTextEditor ?? window.visibleTextEditors[0];
-  const filePath = getFilePath("comments.json");
-  await showFileComments(filePath, context);
-
-  
 
   context.subscriptions.push(
     commands.registerCommand("extension.showCommentSidebar", () => {
@@ -158,12 +182,10 @@ context.subscriptions.push(
       const webviewPath = path.resolve(__dirname, "../src/webview.html");
       const cssPath = Uri.joinPath(context.extensionUri, "src", "custom.css");
       const cssUri = panel.webview.asWebviewUri(cssPath);
-      
+
       fs.readFile(webviewPath, "utf-8", (err, data) => {
         if (err) {
-          window.showErrorMessage(
-            `Error reading HTML file: ${err.message}`
-          );
+          window.showErrorMessage(`Error reading HTML file: ${err.message}`);
           return;
         }
 
@@ -182,86 +204,62 @@ context.subscriptions.push(
 
 
   context.subscriptions.push(
-    window.onDidChangeActiveTextEditor((editor) => {
-      if (editor) {
+    window.onDidChangeActiveTextEditor((editor: TextEditor | undefined) => {
+      if (editor && filePath) {
         activeEditor = editor;
-        showFileComments(filePath, context);
+        showComments(filePath);
       }
     })
   );
 }
 
-
-
-interface CommentType {
-  fileName: string;
-  start: {
-    line: number;
-    character: number;
-  };
-  end: {
-    line: number;
-    character: number;
-  };
-  comment: string;
-}
-
-
 function handleMessageFromWebview(message: any) {
   switch (message.command) {
     case "getText":
-      const filePath = getFilePath("comments.json");
+      const { text: commentText } = message;
       const fileName = activeEditor.document.fileName;
-      const { commentText } = message;
-      saveToFile(filePath, fileName, activeEditor.selection, commentText);
+      saveToFile(fileName, activeEditor.selection, commentText);
       deactivate();
   }
 }
 
-async function getComments(filePath: string): Promise<CommentType[]> {
+function saveToFile(
+  fileName: string,
+  selection: Selection,
+  commentText: string
+) {
+  const jsonFilePath = getFilePath(commentsFile);
+
+  if (!jsonFilePath) {
+    window.showErrorMessage("JSON file not found");
+    return;
+  }
+
   try {
-    const existingComments = await readFromFile(filePath);
-    const fileName = activeEditor.document.fileName;
-    return existingComments.filter((comment) => comment.fileName === fileName);
+    const commentData: CommentType = {
+      fileName: fileName,
+      start: {
+        line: selection.start.line + 1,
+        character: selection.start.character + 1,
+      },
+      end: {
+        line: selection.end.line + 1,
+        character: selection.end.character + 1,
+      },
+      comment: commentText,
+    };
+
+    const dataFromFile = JSON.parse(fs.readFileSync(jsonFilePath, "utf-8"));
+    dataFromFile.comments.push(commentData);
+    const commentJson = JSON.stringify(dataFromFile);
+    fs.writeFileSync(jsonFilePath, commentJson);
   } catch (error) {
-    console.error(`Error getting comments: ${error}`);
-    return [];
+    window.showErrorMessage(`Error saving to file: ${error}`);
+    return;
   }
 }
 
-async function showFileComments(filePath: string, context: ExtensionContext) {
-  const fileComments = await getComments(filePath);
-  const iconDecoration: DecorationOptions[] = [];
-  const highlightDecoration: DecorationOptions[] = [];
-
-  fileComments.forEach((comment: CommentType) => {
-    const { start, end } = comment;
-    const startPos = new Position(start.line - 1, start.character - 1);
-    const endPos = new Position(end.line - 1, end.character - 1);
-    const lineLength = activeEditor.document.lineAt(end.line - 1).text.length;
-    const lineStartPosition = new Position(end.line - 1, 0);
-    const lineEndPosition = new Position(end.line - 1, lineLength);
-
-    iconDecoration.push({
-      range: new Range(lineStartPosition, lineEndPosition),
-    });
-    highlightDecoration.push({ range: new Range(startPos, endPos) });
-  });
-
-  const icon = window.createTextEditorDecorationType({
-    after: {
-      contentIconPath: context.asAbsolutePath(path.join("src", "comment.svg")),
-      margin: "5px",
-    },
-  });
-  const highlight = window.createTextEditorDecorationType({
-    backgroundColor: "#8CBEB260",
-  });
-  activeEditor.setDecorations(icon, iconDecoration);
-  activeEditor.setDecorations(highlight, highlightDecoration);
-}
-
-async function readFromFile(filePath: string): Promise<CommentType[]> {
+async function readFromFile(filePath: string) {
   try {
     const jsonData = await fs.promises.readFile(filePath, "utf-8");
     const { comments } = JSON.parse(jsonData);
@@ -277,45 +275,55 @@ async function readFromFile(filePath: string): Promise<CommentType[]> {
   }
 }
 
-async function saveToFile(
-  filePath: string,
-  fileName: string,
-  selection: Selection,
-  commentText: string
-) {
+async function getComments(filePath: string): Promise<CommentType[]> {
   try {
-    const commentData: CommentType = {
-      fileName,
-      start: {
-        line: selection.start.line + 1,
-        character: selection.start.character + 1,
-      },
-      end: {
-        line: selection.end.line + 1,
-        character: selection.end.character + 1,
-      },
-      comment: commentText,
-    };
-
-    const existingComments = await readFromFile(filePath);
-    existingComments.push(commentData);
-    const commentJson = JSON.stringify({ comments: existingComments });
-    await fs.promises.writeFile(filePath, commentJson);
+    if (activeEditor) {
+      const fileName = activeEditor.document.fileName;
+      const existingComments = await readFromFile(filePath);
+      return existingComments.filter(
+        (comment: CommentType) => comment.fileName === fileName
+      );
+    } else {
+      return [];
+    }
   } catch (error) {
-    console.error(`Error saving to file: ${error}`);
+    console.error(`Error getting comments: ${error}`);
+    return [];
   }
+}
+
+async function showComments(filePath: string) {
+  // Empty arrays to avoid duplicate decoration when adding a new comment
+  iconDecoration = [];
+  highlightDecoration = [];
+
+  const fileComments = await getComments(filePath);
+  fileComments.forEach((comment: CommentType) => {
+    const { start, end } = comment;
+    const startPos = new Position(start.line - 1, start.character - 1);
+    const endPos = new Position(end.line - 1, end.character - 1);
+    const lineLength = activeEditor.document.lineAt(end.line - 1).text.length;
+    const lineStartPosition = new Position(end.line - 1, 0);
+    const lineEndPosition = new Position(end.line - 1, lineLength);
+    iconDecoration.push({
+      range: new Range(lineStartPosition, lineEndPosition),
+    });
+    highlightDecoration.push({ range: new Range(startPos, endPos) });
+  });
+
+  activeEditor.setDecorations(icon, iconDecoration);
+  activeEditor.setDecorations(highlight, highlightDecoration);
 }
 
 function getFilePath(fileName: string) {
   const workspaceFolders = workspace.workspaceFolders;
   if (!workspaceFolders) {
-    window.showErrorMessage("No workspace folder found.");
+    window.showErrorMessage("No workspace folders found.");
     return "";
   }
   const workspaceFolder = workspaceFolders[0];
   if (!workspaceFolder) {
     window.showErrorMessage("No workspace folder found.");
-    return "";
   }
   return path.join(workspaceFolder.uri.fsPath, fileName);
 }
@@ -339,6 +347,6 @@ async function getRubricsJson(filePath: string) {
 export function deactivate() {
   if (panel) {
     panel.dispose();
-    activeEditor = window.visibleTextEditors[0];
+    // activeEditor = window.visibleTextEditors[0];
   }
 }
