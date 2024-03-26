@@ -43,8 +43,9 @@
         >
       </div>
     </div>
+    <input id="title" type="text" name="title" placeholder="Tittel" />
     <div>
-      <textarea placeholder="Skriv her." id="textBox"></textarea>
+      <textarea placeholder="Kommentar" id="textBox"></textarea>
       <br />
       <button type="button" class="btn btn-primary btn-sm" onclick="sendText()">
         Legg til
@@ -60,8 +61,13 @@
       textArea.focus();
       function sendText() {
         const vscode = acquireVsCodeApi();
-        const text = document.getElementById("textBox").value;
-        vscode.postMessage({ command: "getText", text: text });
+        const title = document.getElementById("title").value;
+        const text = textArea.value;
+        const comment = {
+          title: title,
+          text: text,
+        };
+        vscode.postMessage({ command: "getComment", data: comment });
       }
     </script>
   </body>

@@ -30,13 +30,12 @@
       crossorigin="anonymous"
     ></script>
     <script>
-      let message;
-      let rubricsJson;
-
       window.addEventListener("message", (event) => {
-        message = event.data;
-        rubricsJson = message.data;
+        const message = event.data;
+
+        console.log(message);
         if (message.command === "rubricsJson") {
+          const rubricsJson = message.data;
           if (rubricsJson && Array.isArray(rubricsJson.rubrics)) {
             loadHTML(rubricsJson);
           }

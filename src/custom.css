@@ -11965,7 +11965,14 @@ input[class=btn-check]:hover + label {
 }
 
 textarea {
-  max-width: 100%;
+  width: 80%;
+  height: 8em;
+}
+
+input {
+  margin-bottom: 1em;
+  padding: 1%;
+  width: 80%;
 }
 
 .container {

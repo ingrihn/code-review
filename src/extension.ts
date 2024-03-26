@@ -13,112 +13,11 @@ import {
   commands,
   window,
   workspace,
-  TreeItem,
-  TreeDataProvider,
-  TreeItemCollapsibleState,
-  EventEmitter,
-  Event,
-  WebviewViewProvider,
-  WebviewView,
-  WebviewViewResolveContext,
-  CancellationToken,
 } from "vscode";
 import path from "path";
-
-
-interface CommentType {
-  fileName: string;
-  start: {
-    line: number;
-    character: number;
-  };
-  end: {
-    line: number;
-    character: number;
-  };
-  comment: string;
-}
-
-
-class InlineComment extends TreeItem {
-  constructor(
-    public readonly label: string,
-    public readonly collapsibleState: TreeItemCollapsibleState
-  ) {
-    super(label, collapsibleState);
-  }
-}
-
-class InlineCommentProvider implements TreeDataProvider<InlineComment> {
-  private _onDidChangeTreeData: EventEmitter<InlineComment | undefined> = new EventEmitter<InlineComment | undefined>();
-  readonly onDidChangeTreeData: Event<InlineComment | undefined> = this._onDidChangeTreeData.event;
-
-  refresh(comment?: InlineComment): void {
-    this._onDidChangeTreeData.fire(comment);
-  }
-
-  getTreeItem(element: InlineComment): TreeItem {
-    return element;
-  } 
-
-  getChildren(element?: InlineComment): Thenable<InlineComment[]> {
-    const items: InlineComment[] = [
-      new InlineComment('Item 1', TreeItemCollapsibleState.None),
-      new InlineComment('Item 2', TreeItemCollapsibleState.None),
-    ];
-
-    return Promise.resolve(items);
-  }
-}
-
-class GeneralViewProvider implements WebviewViewProvider {
-  public static readonly viewType = 'collabrate-general';
-  private _view?: WebviewView;
-
-  constructor(
-		private readonly _extensionUri: Uri,
-	) { }
-
-  getView(): WebviewView | undefined {
-    return this._view;
-  }
-
-  public resolveWebviewView(
-		webviewView: WebviewView,
-		context: WebviewViewResolveContext,
-		_token: CancellationToken,
-	) {
-		this._view = webviewView;
-
-		webviewView.webview.options = {
-			enableScripts: true,
-		};
-
-    const cssUri = webviewView.webview.asWebviewUri(Uri.joinPath(this._extensionUri, 'src', 'custom.css'));
-
-    const htmlFilePath = Uri.joinPath(
-      this._extensionUri,
-      "src",
-      "general-comments.html"
-    );
-
-    fs.readFile(htmlFilePath.fsPath, "utf-8", async (err, data) => {
-      if (err) {
-        window.showErrorMessage(
-          `Error reading HTML file: ${err.message}`
-        );
-        return;
-      }
-  
-      if (this._view) {
-        const filePath = getFilePath("rubrics.json");
-        const rubricsJson = await getRubricsJson(filePath);
-        webviewView.webview.html = data.replace("${cssPath}", cssUri.toString());
-        webviewView.webview.postMessage({ command: 'rubricsJson', data: rubricsJson });
-      }
-    });
-  }
-}
+import { InlineCommentProvider } from "./inline-comment-provider";
+import { GeneralViewProvider } from "./general-view-provider";
+import { CommentType } from "./comment-type";
 
 
 let panel: WebviewPanel;
@@ -152,18 +51,20 @@ export async function activate(context: ExtensionContext) {
 
 context.subscriptions.push(
   window.registerWebviewViewProvider(GeneralViewProvider.viewType, {
-      resolveWebviewView: (webviewView, _context, _token) => {
-          const disposable = webviewView.onDidChangeVisibility(async e => {
-            const filePath = getFilePath("rubrics.json");
-            const rubricsJson = await getRubricsJson(filePath);
-            await webviewView.webview.postMessage({ command: 'rubricsJson', data: rubricsJson });
-          });
-          context.subscriptions.push (disposable);
-          return generalViewProvider.resolveWebviewView(webviewView, _context, _token);
+      resolveWebviewView: async (webviewView, _context, _token) => {
+        const webview = await generalViewProvider.resolveWebviewView(webviewView, _context, _token);
+        const disposable = webviewView.onDidChangeVisibility(async e => {
+        try {
+          await generalViewProvider.resolveWebviewView(webviewView, _context, _token);
+        } catch (error) {
+          console.error('Error fetching rubrics JSON:', error);
+        }
+        });
+        context.subscriptions.push (disposable);
+        return webview; 
       }
   })
 );
- 
   window.registerTreeDataProvider(
     viewId,
     treeDataProvider
@@ -213,19 +114,23 @@ context.subscriptions.push(
   );
 }
 
+
 function handleMessageFromWebview(message: any) {
   switch (message.command) {
-    case "getText":
-      const { text: commentText } = message;
+    case "getComment":
       const fileName = activeEditor.document.fileName;
-      saveToFile(fileName, activeEditor.selection, commentText);
+      const title = message.data.title;
+      const commentText = message.data.text;
+      saveToFile(fileName, activeEditor.selection, title, commentText);
       deactivate();
+      break;
   }
 }
 
 function saveToFile(
   fileName: string,
   selection: Selection,
+  title: string,
   commentText: string
 ) {
   const jsonFilePath = getFilePath(commentsFile);
@@ -246,6 +151,7 @@ function saveToFile(
         line: selection.end.line + 1,
         character: selection.end.character + 1,
       },
+      title: title,
       comment: commentText,
     };
 
@@ -259,7 +165,7 @@ function saveToFile(
   }
 }
 
-async function readFromFile(filePath: string) {
+export async function readFromFile(filePath: string) {
   try {
     const jsonData = await fs.promises.readFile(filePath, "utf-8");
     const { comments } = JSON.parse(jsonData);
@@ -315,7 +221,7 @@ async function showComments(filePath: string) {
   activeEditor.setDecorations(highlight, highlightDecoration);
 }
 
-function getFilePath(fileName: string) {
+export function getFilePath(fileName: string) {
   const workspaceFolders = workspace.workspaceFolders;
   if (!workspaceFolders) {
     window.showErrorMessage("No workspace folders found.");
@@ -328,7 +234,7 @@ function getFilePath(fileName: string) {
   return path.join(workspaceFolder.uri.fsPath, fileName);
 }
 
-async function getRubricsJson(filePath: string) {
+export async function getRubricsJson(filePath: string) {
   try {
     const data = await fs.promises.readFile(filePath, "utf-8");
     return JSON.parse(data);
@@ -347,6 +253,5 @@ async function getRubricsJson(filePath: string) {
 export function deactivate() {
   if (panel) {
     panel.dispose();
-    // activeEditor = window.visibleTextEditors[0];
   }
 }
