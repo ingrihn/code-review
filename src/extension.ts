@@ -8,6 +8,7 @@ import {
   Selection,
   TextEditor,
   TextEditorDecorationType,
+  TextEditorSelectionChangeEvent,
   Uri,
   ViewColumn,
   WebviewPanel,
@@ -19,6 +20,7 @@ import {
 import path from "path";
 
 interface CommentType {
+  id: number;
   fileName: string;
   start: {
     line: number;
@@ -56,37 +58,48 @@ export function activate(context: ExtensionContext) {
   }
 
   context.subscriptions.push(
-    commands.registerCommand("extension.showCommentSidebar", () => {
-      panel = window.createWebviewPanel(
-        "commentSidebar",
-        "Comment Sidebar",
-        ViewColumn.Beside,
-        {
-          enableScripts: true,
-        }
-      );
-
-      const webviewPath = path.resolve(__dirname, "../src/webview.html");
-      const cssPath = Uri.joinPath(context.extensionUri, "src", "custom.css");
-      const cssUri = panel.webview.asWebviewUri(cssPath);
-
-      fs.readFile(webviewPath, "utf-8", (err, data) => {
-        if (err) {
-          window.showErrorMessage(`Error reading HTML file: ${err.message}`);
-          return;
+    commands.registerCommand(
+      "extension.showCommentSidebar",
+      (comment?: CommentType) => {
+        // Close panel if there's already one open
+        if (panel) {
+          panel.dispose();
         }
 
-        panel.webview.html = data.replace("${cssPath}", cssUri.toString());
-
-        panel.webview.onDidReceiveMessage(
-          (message) => {
-            handleMessageFromWebview(message);
-          },
-          undefined,
-          context.subscriptions
+        panel = window.createWebviewPanel(
+          "commentSidebar",
+          "Comment Sidebar",
+          ViewColumn.Beside,
+          {
+            enableScripts: true,
+          }
         );
-      });
-    })
+
+        const webviewPath = path.resolve(__dirname, "../src/webview.html");
+        const cssPath = Uri.joinPath(context.extensionUri, "src", "custom.css");
+        const cssUri = panel.webview.asWebviewUri(cssPath);
+
+        fs.readFile(webviewPath, "utf-8", (err, data) => {
+          if (err) {
+            window.showErrorMessage(`Error reading HTML file: ${err.message}`);
+            return;
+          }
+
+          let htmlContent = data.replace("${cssPath}", cssUri.toString());
+          let commentText = comment && comment.comment ? comment.comment : "";
+          htmlContent = htmlContent.replace("${commentText}", commentText);
+          panel.webview.html = htmlContent;
+
+          panel.webview.onDidReceiveMessage(
+            (message) => {
+              handleMessageFromWebview(message);
+            },
+            undefined,
+            context.subscriptions
+          );
+        });
+      }
+    )
   );
 
   context.subscriptions.push(
@@ -97,6 +110,62 @@ export function activate(context: ExtensionContext) {
       }
     })
   );
+
+  // Click on highlighted text to view comment in webview
+  context.subscriptions.push(
+    window.onDidChangeTextEditorSelection(
+      async (event: TextEditorSelectionChangeEvent) => {
+        const selection = event.selections[0];
+        // Prevents unwanted behaviour with multi-selection
+        if (
+          activeEditor &&
+          selection.anchor.isEqual(selection.active) &&
+          selection.start.line === selection.end.line
+        ) {
+          const clickedPosition: Position = activeEditor.selection.active;
+          let highlightedRange: Range | undefined;
+          const isHighlightedClicked = highlightDecoration.some(
+            (decoration) => {
+              if (decoration.range.contains(clickedPosition)) {
+                highlightedRange = decoration.range;
+                return true; // Stop iteration once a match is found
+              }
+              return false;
+            }
+          );
+
+          if (isHighlightedClicked && highlightedRange) {
+            const comment: CommentType | undefined = await getComment(
+              highlightedRange,
+              activeEditor.document.fileName
+            );
+            if (comment) {
+              commands.executeCommand("extension.showCommentSidebar", comment);
+            }
+          }
+        }
+      }
+    )
+  );
+}
+
+async function getComment(range: Range, fileName: string) {
+  const filePath = getFilePath("comments.json");
+  if (!filePath) {
+    return;
+  }
+
+  const allComments = await readFromFile(filePath);
+  const comment: CommentType = allComments.find(
+    (c: CommentType) =>
+      c.fileName === fileName &&
+      c.start.line <= range.start.line + 1 &&
+      c.end.line >= range.end.line + 1 &&
+      c.start.character <= range.start.character + 1 &&
+      c.end.character >= range.end.character + 1
+  );
+
+  return comment;
 }
 
 function handleMessageFromWebview(message: any) {
@@ -123,6 +192,7 @@ function saveToFile(
 
   try {
     const commentData: CommentType = {
+      id: Date.now(),
       fileName: fileName,
       start: {
         line: selection.start.line + 1,
@@ -217,6 +287,5 @@ function getFilePath(fileName: string) {
 export function deactivate() {
   if (panel) {
     panel.dispose();
-    // activeEditor = window.visibleTextEditors[0];
   }
 }
