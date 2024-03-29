@@ -87,7 +87,7 @@ export function activate(context: ExtensionContext) {
 
           let htmlContent = data.replace("${cssPath}", cssUri.toString());
           let commentText = comment && comment.comment ? comment.comment : "";
-          let commentId = comment && comment.id ? comment.id : Date.now();
+          let commentId = comment && comment.id ? comment.id : "";
 
           htmlContent = htmlContent.replace("${commentText}", commentText);
           htmlContent = htmlContent.replace(
@@ -187,18 +187,26 @@ function handleMessageFromWebview(message: any) {
       const fileName = activeEditor.document.fileName;
       saveToFile(fileName, activeEditor.selection, commentText);
       deactivate();
+      break;
     case "deleteComment":
-      const { text: commentId } = message;
+      const { id: commentId } = message;
       deleteComment(commentId);
       deactivate();
-    // case "editComment":
-    //   console.log("updated", commentText);
+      break;
+    case "updateComment":
+      const { id: newCommentId, text: newCommentText } = message;
+      console.log(newCommentId, newCommentText);
+      updateComment(newCommentId, newCommentText);
+      deactivate();
+      break;
     default:
+      deactivate();
       break; // Handle unknown command
   }
 }
 
-async function deleteComment(commentId: number) {
+async function updateComment(id: number, comment: string) {
+  console.log("new comment", comment);
   const jsonFilePath = getFilePath(commentsFile);
 
   if (!jsonFilePath) {
@@ -209,13 +217,38 @@ async function deleteComment(commentId: number) {
   try {
     const existingComments = await readFromFile(jsonFilePath);
     const commentIndex = existingComments.findIndex(
-      (comment: CommentType) => comment.id === commentId
+      (comment: CommentType) => comment.id === id
+    );
+    if (commentIndex !== -1) {
+      existingComments[commentIndex].comment = comment;
+      const updatedData = { comments: existingComments };
+      fs.writeFileSync(jsonFilePath, JSON.stringify(updatedData));
+      console.log("updated", id);
+    }
+  } catch (error) {
+    window.showErrorMessage(`Error updating file: ${error}`);
+    return;
+  }
+}
+
+async function deleteComment(id: number) {
+  const jsonFilePath = getFilePath(commentsFile);
+
+  if (!jsonFilePath) {
+    window.showErrorMessage("JSON file not found");
+    return;
+  }
+
+  try {
+    const existingComments = await readFromFile(jsonFilePath);
+    const commentIndex = existingComments.findIndex(
+      (comment: CommentType) => comment.id === id
     );
     if (commentIndex !== -1) {
       existingComments.splice(commentIndex, 1);
       const updatedData = { comments: existingComments };
       fs.writeFileSync(jsonFilePath, JSON.stringify(updatedData));
-      console.log("deleted", commentId);
+      console.log("deleted", id);
     }
   } catch (error) {
     window.showErrorMessage(`Error deleting from file: ${error}`);

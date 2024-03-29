@@ -19,19 +19,31 @@
       <textarea placeholder="Skriv her." id="textBox">${commentText}</textarea>
       <br />
       <button
+        id="addBtn"
         type="button"
         class="btn btn-primary btn-sm"
         onclick="addComment()"
       >
         Legg til
       </button>
-      <button
+      <div id="editBtns">
+        <button
+        id="updateBtn"
         type="button"
         class="btn btn-primary btn-sm"
-        onclick="deleteComment()"
-      >
-        Slett
+        onclick="updateComment()"
+        >
+        Lagre
       </button>
+      <button
+      id="deleteBtn"
+      type="button"
+      class="btn btn-primary btn-sm"
+      onclick="deleteComment()"
+      >
+      Slett
+    </div>
+    </button>
     </div>
 
     <script
@@ -40,20 +52,40 @@
       crossorigin="anonymous"
     ></script>
     <script>
-      const textArea = document.getElementById("textBox");
-      textArea.focus();
       const vscode = acquireVsCodeApi();
 
+      // Autofocus on the text area
+      const textArea = document.getElementById("textBox");
+      textArea.focus();
+
+      // Hide delete and update button if adding a new comment
+      const commentId =
+        document.getElementById("commentData").dataset.commentId;
+      if (commentId === "") {
+        const editBtns = document.getElementById("editBtns");
+        editBtns.style.display = "none";
+      } else {
+        const addBtn = document.getElementById("addBtn");
+        addBtn.style.display = "none";
+      }
+
       function addComment() {
-        const text = document.getElementById("textBox").value;
-        vscode.postMessage({ command: "addComment", text: text });
+        const commentText = document.getElementById("textBox").value;
+        vscode.postMessage({ command: "addComment", text: commentText });
       }
 
       function deleteComment() {
-        const commentId = parseInt(
-          document.getElementById("commentData").dataset.commentId
-        );
-        vscode.postMessage({ command: "deleteComment", text: commentId });
+        vscode.postMessage({
+          command: "deleteComment",
+          id: parseInt(commentId),
+        });
+      }
+
+      function updateComment() {
+        const newCommentId =
+        document.getElementById("commentData").dataset.commentId;
+        const newCommentText = document.getElementById("textBox").value;
+        vscode.postMessage({ command: "updateComment", text: newCommentText, id: parseInt(newCommentId) });
       }
     </script>
   </body>
