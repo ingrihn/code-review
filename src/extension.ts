@@ -87,7 +87,13 @@ export function activate(context: ExtensionContext) {
 
           let htmlContent = data.replace("${cssPath}", cssUri.toString());
           let commentText = comment && comment.comment ? comment.comment : "";
+          let commentId = comment && comment.id ? comment.id : Date.now();
+
           htmlContent = htmlContent.replace("${commentText}", commentText);
+          htmlContent = htmlContent.replace(
+            "${commentId}",
+            commentId.toString()
+          );
           panel.webview.html = htmlContent;
 
           panel.webview.onDidReceiveMessage(
@@ -136,8 +142,7 @@ export function activate(context: ExtensionContext) {
 
           if (isHighlightedClicked && highlightedRange) {
             const comment: CommentType | undefined = await getComment(
-              highlightedRange,
-              activeEditor.document.fileName
+              highlightedRange
             );
             if (comment) {
               commands.executeCommand("extension.showCommentSidebar", comment);
@@ -149,32 +154,72 @@ export function activate(context: ExtensionContext) {
   );
 }
 
-async function getComment(range: Range, fileName: string) {
+async function getComment(input: Range | number) {
   const filePath = getFilePath("comments.json");
   if (!filePath) {
     return;
   }
 
   const allComments = await readFromFile(filePath);
-  const comment: CommentType = allComments.find(
-    (c: CommentType) =>
-      c.fileName === fileName &&
-      c.start.line <= range.start.line + 1 &&
-      c.end.line >= range.end.line + 1 &&
-      c.start.character <= range.start.character + 1 &&
-      c.end.character >= range.end.character + 1
-  );
+  let comment: CommentType | undefined;
 
+  if (input instanceof Range) {
+    const range = input;
+    comment = allComments.find(
+      (c: CommentType) =>
+        c.fileName === activeEditor.document.fileName &&
+        c.start.line <= range.start.line + 1 &&
+        c.end.line >= range.end.line + 1 &&
+        c.start.character <= range.start.character + 1 &&
+        c.end.character >= range.end.character + 1
+    );
+  } else if (typeof input === "number") {
+    const commentId = input;
+    comment = allComments.find((c: CommentType) => c.id === commentId);
+  }
   return comment;
 }
 
 function handleMessageFromWebview(message: any) {
   switch (message.command) {
-    case "getText":
+    case "addComment":
       const { text: commentText } = message;
       const fileName = activeEditor.document.fileName;
       saveToFile(fileName, activeEditor.selection, commentText);
       deactivate();
+    case "deleteComment":
+      const { text: commentId } = message;
+      deleteComment(commentId);
+      deactivate();
+    // case "editComment":
+    //   console.log("updated", commentText);
+    default:
+      break; // Handle unknown command
+  }
+}
+
+async function deleteComment(commentId: number) {
+  const jsonFilePath = getFilePath(commentsFile);
+
+  if (!jsonFilePath) {
+    window.showErrorMessage("JSON file not found");
+    return;
+  }
+
+  try {
+    const existingComments = await readFromFile(jsonFilePath);
+    const commentIndex = existingComments.findIndex(
+      (comment: CommentType) => comment.id === commentId
+    );
+    if (commentIndex !== -1) {
+      existingComments.splice(commentIndex, 1);
+      const updatedData = { comments: existingComments };
+      fs.writeFileSync(jsonFilePath, JSON.stringify(updatedData));
+      console.log("deleted", commentId);
+    }
+  } catch (error) {
+    window.showErrorMessage(`Error deleting from file: ${error}`);
+    return;
   }
 }
 

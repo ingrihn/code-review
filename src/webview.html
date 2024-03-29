@@ -14,36 +14,23 @@
   </head>
   <body>
     <h1>Legg inn kommentar</h1>
-    <h2>Velg kommentartype</h2>
-    <div
-      class="btn-group btn-group-sm"
-      role="group"
-      aria-label="Basic radio toggle button group"
-    >
-      <input
-        type="radio"
-        class="btn-check"
-        name="btnradio"
-        id="btnradio1"
-        autocomplete="off"
-        checked
-      />
-      <label class="btn btn-outline-primary" for="btnradio1">Kommentar</label>
 
-      <input
-        type="radio"
-        class="btn-check"
-        name="btnradio"
-        id="btnradio2"
-        autocomplete="off"
-      />
-      <label class="btn btn-outline-primary" for="btnradio2">Kodeforslag</label>
-    </div>
-    <div>
+    <div id="commentData" data-comment-id="${commentId}">
       <textarea placeholder="Skriv her." id="textBox">${commentText}</textarea>
       <br />
-      <button type="button" class="btn btn-primary btn-sm" onclick="sendText()">
+      <button
+        type="button"
+        class="btn btn-primary btn-sm"
+        onclick="addComment()"
+      >
         Legg til
+      </button>
+      <button
+        type="button"
+        class="btn btn-primary btn-sm"
+        onclick="deleteComment()"
+      >
+        Slett
       </button>
     </div>
 
@@ -55,10 +42,18 @@
     <script>
       const textArea = document.getElementById("textBox");
       textArea.focus();
-      function sendText() {
-        const vscode = acquireVsCodeApi();
+      const vscode = acquireVsCodeApi();
+
+      function addComment() {
         const text = document.getElementById("textBox").value;
-        vscode.postMessage({ command: "getText", text: text });
+        vscode.postMessage({ command: "addComment", text: text });
+      }
+
+      function deleteComment() {
+        const commentId = parseInt(
+          document.getElementById("commentData").dataset.commentId
+        );
+        vscode.postMessage({ command: "deleteComment", text: commentId });
       }
     </script>
   </body>
