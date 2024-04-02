@@ -1,4 +1,5 @@
 export interface CommentType {
+    id: number;
     fileName: string;
     start: {
       line: number;

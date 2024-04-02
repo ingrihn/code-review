@@ -7,6 +7,7 @@ import {
   Selection,
   TextEditor,
   TextEditorDecorationType,
+  TextEditorSelectionChangeEvent,
   Uri,
   ViewColumn,
   WebviewPanel,
@@ -22,6 +23,7 @@ import { CommentType } from "./comment-type";
 
 let panel: WebviewPanel;
 let activeEditor: TextEditor;
+let treeDataProvider: InlineCommentProvider;
 let generalViewProvider: GeneralViewProvider;
 let iconDecoration: DecorationOptions[] = [];
 let highlightDecoration: DecorationOptions[] = [];
@@ -30,7 +32,7 @@ let highlight: TextEditorDecorationType;
 const commentsFile: string = "comments.json";
 
 export async function activate(context: ExtensionContext) {
-  const treeDataProvider = new InlineCommentProvider();
+  treeDataProvider = new InlineCommentProvider();
   const viewId = 'collabrate-inline';
   generalViewProvider = new GeneralViewProvider(context.extensionUri);
   activeEditor = window.activeTextEditor ?? window.visibleTextEditors[0];
@@ -71,7 +73,12 @@ context.subscriptions.push(
   );
 
   context.subscriptions.push(
-    commands.registerCommand("extension.showCommentSidebar", () => {
+    commands.registerCommand("extension.showCommentSidebar", 
+    (comment?: CommentType) => {
+      if (panel) {
+        panel.dispose();
+      }
+
       panel = window.createWebviewPanel(
         "commentSidebar",
         "Comment Sidebar",
@@ -80,6 +87,7 @@ context.subscriptions.push(
           enableScripts: true,
         }
       );
+
       const webviewPath = path.resolve(__dirname, "../src/webview.html");
       const cssPath = Uri.joinPath(context.extensionUri, "src", "custom.css");
       const cssUri = panel.webview.asWebviewUri(cssPath);
@@ -90,7 +98,17 @@ context.subscriptions.push(
           return;
         }
 
-        panel.webview.html = data.replace("${cssPath}", cssUri.toString());
+        // panel.webview.html = data.replace("${cssPath}", cssUri.toString());
+        let htmlContent = data.replace("${cssPath}", cssUri.toString());
+        let commentText = comment && comment.comment ? comment.comment : "";
+        let commentId = comment && comment.id ? comment.id : "";
+
+        htmlContent = htmlContent.replace("${commentText}", commentText);
+        htmlContent = htmlContent.replace(
+          "${commentId}",
+          commentId.toString()
+        );
+        panel.webview.html = htmlContent;
     
         panel.webview.onDidReceiveMessage(
           (message) => {
@@ -98,10 +116,10 @@ context.subscriptions.push(
           },
           undefined,
           context.subscriptions
-        );
-      });
-    })
-  );
+          );
+        });
+      }
+    ));
 
 
   context.subscriptions.push(
@@ -112,8 +130,68 @@ context.subscriptions.push(
       }
     })
   );
+
+  context.subscriptions.push(
+    window.onDidChangeTextEditorSelection(
+      async (event: TextEditorSelectionChangeEvent) => {
+        const selection = event.selections[0];
+        // Prevents unwanted behaviour with multi-selection
+        if (
+          activeEditor &&
+          selection.anchor.isEqual(selection.active) &&
+          selection.start.line === selection.end.line
+        ) {
+          const clickedPosition: Position = activeEditor.selection.active;
+          let highlightedRange: Range | undefined;
+          const isHighlightedClicked = highlightDecoration.some(
+            (decoration) => {
+              if (decoration.range.contains(clickedPosition)) {
+                highlightedRange = decoration.range;
+                return true; // Stop iteration once a match is found
+              }
+              return false;
+            }
+          );
+
+          if (isHighlightedClicked && highlightedRange) {
+            const comment: CommentType | undefined = await getComment(
+              highlightedRange
+            );
+            if (comment) {
+              commands.executeCommand("extension.showCommentSidebar", comment);
+            }
+          }
+        }
+      }
+    )
+  );
 }
 
+export async function getComment(input: Range | number) {
+  const filePath = getFilePath("comments.json");
+  if (!filePath) {
+    return;
+  }
+
+  const allComments = await readFromFile(filePath);
+  let comment: CommentType | undefined;
+
+  if (input instanceof Range) {
+    const range = input;
+    comment = allComments.find(
+      (c: CommentType) =>
+        c.fileName === activeEditor.document.fileName &&
+        c.start.line <= range.start.line + 1 &&
+        c.end.line >= range.end.line + 1 &&
+        c.start.character <= range.start.character + 1 &&
+        c.end.character >= range.end.character + 1
+    );
+  } else if (typeof input === "number") {
+    const commentId = input;
+    comment = allComments.find((c: CommentType) => c.id === commentId);
+  }
+  return comment;
+}
 
 function handleMessageFromWebview(message: any) {
   switch (message.command) {
@@ -142,6 +220,7 @@ function saveToFile(
 
   try {
     const commentData: CommentType = {
+      id: Date.now(),
       fileName: fileName,
       start: {
         line: selection.start.line + 1,
@@ -163,6 +242,7 @@ function saveToFile(
     window.showErrorMessage(`Error saving to file: ${error}`);
     return;
   }
+    treeDataProvider.refresh();
 }
 
 export async function readFromFile(filePath: string) {

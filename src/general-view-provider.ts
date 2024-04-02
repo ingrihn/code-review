@@ -44,7 +44,7 @@ export class GeneralViewProvider implements WebviewViewProvider {
         setTimeout(() => {
           webviewView.webview.postMessage({ command: 'rubricsJson', data: rubricsJson });
           console.log("Message sent");
-      }, 1250);
+      }, 3000);
 
     } catch (error) {
         console.error('Error resolving webview view:', error);

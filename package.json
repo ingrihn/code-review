@@ -19,6 +19,10 @@
       {
         "command": "extension.showCommentSidebar",
         "title": "CollabRate: Add Comment"
+      },
+      {
+        "command": "extension.navigateToComment",
+        "title": "Tree View Comment"
       }
     ],
     "menus": {
