@@ -20,7 +20,6 @@ import { InlineCommentProvider } from "./inline-comment-provider";
 import { GeneralViewProvider } from "./general-view-provider";
 import { CommentType } from "./comment-type";
 
-
 let panel: WebviewPanel;
 let activeEditor: TextEditor;
 let treeDataProvider: InlineCommentProvider;
@@ -85,42 +84,45 @@ context.subscriptions.push(
         ViewColumn.Beside,
         {
           enableScripts: true,
-        }
-      );
+        });
 
-      const webviewPath = path.resolve(__dirname, "../src/webview.html");
-      const cssPath = Uri.joinPath(context.extensionUri, "src", "custom.css");
-      const cssUri = panel.webview.asWebviewUri(cssPath);
+        const webviewPath = path.resolve(__dirname, "../src/webview.html");
+        const cssPath = Uri.joinPath(context.extensionUri, "src", "custom.css");
+        const cssUri = panel.webview.asWebviewUri(cssPath);
 
-      fs.readFile(webviewPath, "utf-8", (err, data) => {
-        if (err) {
-          window.showErrorMessage(`Error reading HTML file: ${err.message}`);
-          return;
-        }
+        fs.readFile(webviewPath, "utf-8", (err, data) => {
+          if (err) {
+            window.showErrorMessage(`Error reading HTML file: ${err.message}`);
+            return;
+          }
 
-        // panel.webview.html = data.replace("${cssPath}", cssUri.toString());
-        let htmlContent = data.replace("${cssPath}", cssUri.toString());
-        let commentText = comment && comment.comment ? comment.comment : "";
-        let commentId = comment && comment.id ? comment.id : "";
+          let htmlContent = data.replace("${cssPath}", cssUri.toString());
+          let commentText = comment && comment.comment ? comment.comment : "";
+          let title = comment && comment.title ? comment.title : "";
+          let commentId = comment && comment.id ? comment.id : "";
 
-        htmlContent = htmlContent.replace("${commentText}", commentText);
-        htmlContent = htmlContent.replace(
-          "${commentId}",
-          commentId.toString()
-        );
-        panel.webview.html = htmlContent;
-    
-        panel.webview.onDidReceiveMessage(
-          (message) => {
-            handleMessageFromWebview(message);
-          },
-          undefined,
-          context.subscriptions
+          htmlContent = htmlContent.replace("${commentText}", commentText);
+          htmlContent = htmlContent.replace(
+            "${commentId}",
+            commentId.toString()
+          );
+          htmlContent = htmlContent.replace(
+            "${commentTitle}",
+            title
+          );
+          panel.webview.html = htmlContent;
+
+          panel.webview.onDidReceiveMessage(
+            (message) => {
+              handleMessageFromWebview(message);
+            },
+            undefined,
+            context.subscriptions
           );
         });
       }
-    ));
-
+    )
+  );
 
   context.subscriptions.push(
     window.onDidChangeActiveTextEditor((editor: TextEditor | undefined) => {
@@ -131,6 +133,7 @@ context.subscriptions.push(
     })
   );
 
+  // Click on highlighted text to view comment in webview
   context.subscriptions.push(
     window.onDidChangeTextEditorSelection(
       async (event: TextEditorSelectionChangeEvent) => {
@@ -195,13 +198,79 @@ export async function getComment(input: Range | number) {
 
 function handleMessageFromWebview(message: any) {
   switch (message.command) {
-    case "getComment":
+    case "addComment":
+      const commentText = message.data.text;
       const fileName = activeEditor.document.fileName;
       const title = message.data.title;
-      const commentText = message.data.text;
       saveToFile(fileName, activeEditor.selection, title, commentText);
       deactivate();
       break;
+    case "deleteComment":
+      const { id: commentId } = message;
+      deleteComment(commentId);
+      deactivate();
+      break;
+    case "updateComment":
+      //const { id: newCommentId, data: newCommentText } = message;
+      const newCommentId = message.data.id;
+      const newTitle = message.data.title;
+      const newCommentText = message.data.text;
+      updateComment(newCommentId, newCommentText, newTitle);
+      deactivate();
+      break;
+    default:
+      deactivate();
+      break; // Handle unknown command
+  }
+}
+
+async function updateComment(id: number, comment: string, title: string) {
+  const jsonFilePath = getFilePath(commentsFile);
+
+  if (!jsonFilePath) {
+    window.showErrorMessage("JSON file not found");
+    return;
+  }
+
+  try {
+    const existingComments = await readFromFile(jsonFilePath);
+    const commentIndex = existingComments.findIndex(
+      (comment: CommentType) => comment.id === id
+    );
+    if (commentIndex !== -1) {
+      existingComments[commentIndex].comment = comment;
+      existingComments[commentIndex].title = title;
+      const updatedData = { comments: existingComments };
+      fs.writeFileSync(jsonFilePath, JSON.stringify(updatedData));
+    }
+  } catch (error) {
+    window.showErrorMessage(`Error updating file: ${error}`);
+    return;
+  }
+}
+
+async function deleteComment(id: number) {
+  const jsonFilePath = getFilePath(commentsFile);
+
+  if (!jsonFilePath) {
+    window.showErrorMessage("JSON file not found");
+    return;
+  }
+
+  try {
+    const existingComments = await readFromFile(jsonFilePath);
+    const commentIndex = existingComments.findIndex(
+      (comment: CommentType) => comment.id === id
+    );
+    if (commentIndex !== -1) {
+      existingComments.splice(commentIndex, 1);
+      const updatedData = { comments: existingComments };
+      fs.writeFileSync(jsonFilePath, JSON.stringify(updatedData));
+      console.log("deleted", id);
+    }
+  } catch (error) {
+    window.showErrorMessage(`Error deleting from file: ${error}`);
+    return;
   }
 }
 

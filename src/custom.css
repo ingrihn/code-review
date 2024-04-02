@@ -11901,7 +11901,19 @@ body {
   font-size: 0.7em;
 }
 
+.btn-lg, .btn-group-lg > .btn {
+  font-size: 0.8em;
+  padding: 0.4em 1.3em;
+  border-radius: 10%;
+}
+
+#editBtns, #addBtnDiv {
+  display: flex;
+  justify-content: right;
+}
+
 h1, .h1 {
+  font-size: 1.3em;
   font-weight: bold;
   color: #cccccc;
 }
@@ -11966,14 +11978,18 @@ input[class=btn-check]:hover + label {
 }
 
 textarea {
-  width: 80%;
+  width: 100%;
   height: 8em;
 }
 
 input {
   margin-bottom: 1em;
   padding: 1%;
-  width: 80%;
+  width: 100%;
+}
+
+#deleteBtn {
+  margin-right: 1em;
 }
 
 .container {
