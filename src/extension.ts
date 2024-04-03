@@ -105,18 +105,16 @@ export async function activate(context: ExtensionContext) {
             return;
           }
 
-          let htmlContent = data.replace("${cssPath}", cssUri.toString());
-          // let commentText = comment && comment.comment ? comment.comment : "";
-          // let title = comment && comment.title ? comment.title : "";
-          // let commentId = comment && comment.id ? comment.id : "";
+          // Get values from clicked comment if editing existing comment
+          let commentText = comment && comment.comment ? comment.comment : "";
+          let title = comment && comment.title ? comment.title : "";
+          let commentId = comment && comment.id ? comment.id : "";
 
-          // htmlContent = htmlContent.replace("${commentText}", commentText);
-          // htmlContent = htmlContent.replace(
-          //   "${commentId}",
-          //   commentId.toString()
-          // );
-          // htmlContent = htmlContent.replace("${commentTitle}", title);
-          // panel.webview.html = htmlContent;
+          let htmlContent = data.replace("${cssPath}", cssUri.toString());
+          htmlContent = htmlContent
+            .replace("${commentText}", commentText)
+            .replace("${commentId}", commentId.toString())
+            .replace("${commentTitle}", title);
           panel.webview.html = htmlContent;
 
           panel.webview.onDidReceiveMessage(
@@ -272,7 +270,6 @@ async function deleteComment(id: number) {
       existingComments.splice(commentIndex, 1);
       const updatedData = { comments: existingComments };
       fs.writeFileSync(jsonFilePath, JSON.stringify(updatedData));
-      console.log("deleted", id);
     }
   } catch (error) {
     window.showErrorMessage(`Error deleting from file: ${error}`);
