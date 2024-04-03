@@ -188,7 +188,7 @@ export async function getComment(input: Range | number) {
     const range = input;
     comment = allComments.find(
       (c: CommentType) =>
-        c.fileName === activeEditor.document.fileName &&
+        c.fileName === getRelativePath() &&
         c.start.line <= range.start.line + 1 &&
         c.end.line >= range.end.line + 1 &&
         c.start.character <= range.start.character + 1 &&
@@ -201,11 +201,27 @@ export async function getComment(input: Range | number) {
   return comment;
 }
 
+function getRelativePath() {
+  try {
+    const workspaceFolder = workspace.workspaceFolders?.[0];
+    if (!workspaceFolder) {
+      throw new Error("No workspace folder found.");
+    }
+
+    const absoluteFilePath = activeEditor.document.fileName;
+    const projectRoot = workspaceFolder.uri.fsPath;
+    return path.relative(projectRoot, absoluteFilePath);
+  } catch (error: any) {
+    console.error("Error:", error.message);
+    return "";
+  }
+}
+
 function handleMessageFromWebview(message: any) {
   switch (message.command) {
     case "addComment":
       const commentText = message.data.text;
-      const fileName = activeEditor.document.fileName;
+      const fileName = getRelativePath();
       const title = message.data.title;
       saveToFile(fileName, activeEditor.selection, title, commentText);
       deactivate();
@@ -336,7 +352,7 @@ export async function readFromFile(filePath: string) {
 async function getComments(filePath: string): Promise<CommentType[]> {
   try {
     if (activeEditor) {
-      const fileName = activeEditor.document.fileName;
+      const fileName = getRelativePath();
       const existingComments = await readFromFile(filePath);
       return existingComments.filter(
         (comment: CommentType) => comment.fileName === fileName
