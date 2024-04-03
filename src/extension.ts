@@ -201,15 +201,18 @@ export async function getComment(input: Range | number) {
   return comment;
 }
 
+export function getWorkspaceFolderUri() {
+  const workspaceFolder = workspace.workspaceFolders?.[0];
+  if (!workspaceFolder) {
+    throw new Error("No workspace folder found.");
+  }
+  return workspaceFolder.uri;
+}
+
 function getRelativePath() {
   try {
-    const workspaceFolder = workspace.workspaceFolders?.[0];
-    if (!workspaceFolder) {
-      throw new Error("No workspace folder found.");
-    }
-
     const absoluteFilePath = activeEditor.document.fileName;
-    const projectRoot = workspaceFolder.uri.fsPath;
+    const projectRoot = getWorkspaceFolderUri().fsPath;
     return path.relative(projectRoot, absoluteFilePath);
   } catch (error: any) {
     console.error("Error:", error.message);
@@ -262,6 +265,7 @@ async function updateComment(id: number, comment: string, title: string) {
       existingComments[commentIndex].title = title;
       const updatedData = { comments: existingComments };
       fs.writeFileSync(jsonFilePath, JSON.stringify(updatedData));
+      treeDataProvider.refresh();
     }
   } catch (error) {
     window.showErrorMessage(`Error updating file: ${error}`);
@@ -390,16 +394,7 @@ async function showComments(filePath: string) {
 }
 
 export function getFilePath(fileName: string) {
-  const workspaceFolders = workspace.workspaceFolders;
-  if (!workspaceFolders) {
-    window.showErrorMessage("No workspace folders found.");
-    return "";
-  }
-  const workspaceFolder = workspaceFolders[0];
-  if (!workspaceFolder) {
-    window.showErrorMessage("No workspace folder found.");
-  }
-  return path.join(workspaceFolder.uri.fsPath, fileName);
+  return path.join(getWorkspaceFolderUri().fsPath, fileName);
 }
 
 export async function getRubricsJson(filePath: string) {
