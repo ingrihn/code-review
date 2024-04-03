@@ -17,31 +17,25 @@ import {
   workspace,
 } from "vscode";
 
+import { CommentType } from "./comment-type";
+import { GeneralViewProvider } from "./general-view-provider";
+import { InlineCommentProvider } from "./inline-comment-provider";
 import path from "path";
-
-interface CommentType {
-  id: number;
-  fileName: string;
-  start: {
-    line: number;
-    character: number;
-  };
-  end: {
-    line: number;
-    character: number;
-  };
-  comment: string;
-}
 
 let panel: WebviewPanel;
 let activeEditor: TextEditor;
+let treeDataProvider: InlineCommentProvider;
+let generalViewProvider: GeneralViewProvider;
 let iconDecoration: DecorationOptions[] = [];
 let highlightDecoration: DecorationOptions[] = [];
 let icon: TextEditorDecorationType;
 let highlight: TextEditorDecorationType;
 const commentsFile: string = "comments.json";
 
-export function activate(context: ExtensionContext) {
+export async function activate(context: ExtensionContext) {
+  treeDataProvider = new InlineCommentProvider();
+  const viewId = "collabrate-inline";
+  generalViewProvider = new GeneralViewProvider(context.extensionUri);
   activeEditor = window.activeTextEditor ?? window.visibleTextEditors[0];
   icon = window.createTextEditorDecorationType({
     after: {
@@ -52,16 +46,42 @@ export function activate(context: ExtensionContext) {
   highlight = window.createTextEditorDecorationType({
     backgroundColor: "#8CBEB260",
   });
+
   const filePath = getFilePath("comments.json");
   if (filePath) {
     showComments(filePath);
   }
 
   context.subscriptions.push(
+    window.registerWebviewViewProvider(GeneralViewProvider.viewType, {
+      resolveWebviewView: async (webviewView, _context, _token) => {
+        const webview = await generalViewProvider.resolveWebviewView(
+          webviewView,
+          _context,
+          _token
+        );
+        const disposable = webviewView.onDidChangeVisibility(async (e) => {
+          try {
+            await generalViewProvider.resolveWebviewView(
+              webviewView,
+              _context,
+              _token
+            );
+          } catch (error) {
+            console.error("Error fetching rubrics JSON:", error);
+          }
+        });
+        context.subscriptions.push(disposable);
+        return webview;
+      },
+    })
+  );
+  window.registerTreeDataProvider(viewId, treeDataProvider);
+
+  context.subscriptions.push(
     commands.registerCommand(
       "extension.showCommentSidebar",
       (comment?: CommentType) => {
-        // Close panel if there's already one open
         if (panel) {
           panel.dispose();
         }
@@ -87,6 +107,7 @@ export function activate(context: ExtensionContext) {
 
           let htmlContent = data.replace("${cssPath}", cssUri.toString());
           let commentText = comment && comment.comment ? comment.comment : "";
+          let title = comment && comment.title ? comment.title : "";
           let commentId = comment && comment.id ? comment.id : "";
 
           htmlContent = htmlContent.replace("${commentText}", commentText);
@@ -94,6 +115,7 @@ export function activate(context: ExtensionContext) {
             "${commentId}",
             commentId.toString()
           );
+          htmlContent = htmlContent.replace("${commentTitle}", title);
           panel.webview.html = htmlContent;
 
           panel.webview.onDidReceiveMessage(
@@ -154,7 +176,7 @@ export function activate(context: ExtensionContext) {
   );
 }
 
-async function getComment(input: Range | number) {
+export async function getComment(input: Range | number) {
   const filePath = getFilePath("comments.json");
   if (!filePath) {
     return;
@@ -183,9 +205,10 @@ async function getComment(input: Range | number) {
 function handleMessageFromWebview(message: any) {
   switch (message.command) {
     case "addComment":
-      const { text: commentText } = message;
+      const commentText = message.data.text;
       const fileName = activeEditor.document.fileName;
-      saveToFile(fileName, activeEditor.selection, commentText);
+      const title = message.data.title;
+      saveToFile(fileName, activeEditor.selection, title, commentText);
       deactivate();
       break;
     case "deleteComment":
@@ -194,9 +217,10 @@ function handleMessageFromWebview(message: any) {
       deactivate();
       break;
     case "updateComment":
-      const { id: newCommentId, text: newCommentText } = message;
-      console.log(newCommentId, newCommentText);
-      updateComment(newCommentId, newCommentText);
+      const newCommentId = message.data.id;
+      const newTitle = message.data.title;
+      const newCommentText = message.data.text;
+      updateComment(newCommentId, newCommentText, newTitle);
       deactivate();
       break;
     default:
@@ -205,8 +229,7 @@ function handleMessageFromWebview(message: any) {
   }
 }
 
-async function updateComment(id: number, comment: string) {
-  console.log("new comment", comment);
+async function updateComment(id: number, comment: string, title: string) {
   const jsonFilePath = getFilePath(commentsFile);
 
   if (!jsonFilePath) {
@@ -221,9 +244,9 @@ async function updateComment(id: number, comment: string) {
     );
     if (commentIndex !== -1) {
       existingComments[commentIndex].comment = comment;
+      existingComments[commentIndex].title = title;
       const updatedData = { comments: existingComments };
       fs.writeFileSync(jsonFilePath, JSON.stringify(updatedData));
-      console.log("updated", id);
     }
   } catch (error) {
     window.showErrorMessage(`Error updating file: ${error}`);
@@ -259,6 +282,7 @@ async function deleteComment(id: number) {
 function saveToFile(
   fileName: string,
   selection: Selection,
+  title: string,
   commentText: string
 ) {
   const jsonFilePath = getFilePath(commentsFile);
@@ -280,6 +304,7 @@ function saveToFile(
         line: selection.end.line + 1,
         character: selection.end.character + 1,
       },
+      title: title,
       comment: commentText,
     };
 
@@ -291,9 +316,10 @@ function saveToFile(
     window.showErrorMessage(`Error saving to file: ${error}`);
     return;
   }
+  treeDataProvider.refresh();
 }
 
-async function readFromFile(filePath: string) {
+export async function readFromFile(filePath: string) {
   try {
     const jsonData = await fs.promises.readFile(filePath, "utf-8");
     const { comments } = JSON.parse(jsonData);
@@ -349,17 +375,32 @@ async function showComments(filePath: string) {
   activeEditor.setDecorations(highlight, highlightDecoration);
 }
 
-function getFilePath(fileName: string) {
+export function getFilePath(fileName: string) {
   const workspaceFolders = workspace.workspaceFolders;
   if (!workspaceFolders) {
-    window.showErrorMessage("Workspace folders not found.");
-    return;
+    window.showErrorMessage("No workspace folders found.");
+    return "";
   }
   const workspaceFolder = workspaceFolders[0];
   if (!workspaceFolder) {
-    window.showErrorMessage("Workspace folder not found.");
+    window.showErrorMessage("No workspace folder found.");
   }
   return path.join(workspaceFolder.uri.fsPath, fileName);
+}
+
+export async function getRubricsJson(filePath: string) {
+  try {
+    const data = await fs.promises.readFile(filePath, "utf-8");
+    return JSON.parse(data);
+  } catch (error: any) {
+    if (error.code === "ENOENT") {
+      await fs.promises.writeFile(filePath, '{"rubrics": []}');
+      return [];
+    } else {
+      console.error(error);
+      return [];
+    }
+  }
 }
 
 export function deactivate() {

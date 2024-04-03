@@ -16,36 +16,44 @@
     <h1>Legg inn kommentar</h1>
 
     <div id="commentData" data-comment-id="${commentId}">
-      <textarea placeholder="Skriv her." id="textBox">${commentText}</textarea>
+      <input
+        id="title"
+        type="text"
+        name="title"
+        placeholder="Tittel"
+        value="${commentTitle}"
+      />
+      <textarea placeholder="Kommentar" id="textBox">${commentText}</textarea>
       <br />
-      <button
-        id="addBtn"
-        type="button"
-        class="btn btn-primary btn-sm"
-        onclick="addComment()"
-      >
-        Legg til
-      </button>
+      <div id="addBtnDiv">
+        <button
+          id="addBtn"
+          type="button"
+          class="btn btn-primary btn-lg"
+          onclick="addComment()"
+        >
+          Legg til
+        </button>
+      </div>
       <div id="editBtns">
         <button
-        id="updateBtn"
-        type="button"
-        class="btn btn-primary btn-sm"
-        onclick="updateComment()"
+          id="deleteBtn"
+          type="button"
+          class="btn btn-secondary btn-lg"
+          onclick="deleteComment()"
         >
-        Lagre
-      </button>
-      <button
-      id="deleteBtn"
-      type="button"
-      class="btn btn-primary btn-sm"
-      onclick="deleteComment()"
-      >
-      Slett
+          Slett
+        </button>
+        <button
+          id="updateBtn"
+          type="button"
+          class="btn btn-primary btn-lg"
+          onclick="updateComment()"
+        >
+          Lagre
+        </button>
+      </div>
     </div>
-    </button>
-    </div>
-
     <script
       src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
       integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
@@ -70,8 +78,13 @@
       }
 
       function addComment() {
+        const title = document.getElementById("title").value;
         const commentText = document.getElementById("textBox").value;
-        vscode.postMessage({ command: "addComment", text: commentText });
+        const comment = {
+          title: title,
+          text: commentText,
+        };
+        vscode.postMessage({ command: "addComment", data: comment });
       }
 
       function deleteComment() {
@@ -83,9 +96,15 @@
 
       function updateComment() {
         const newCommentId =
-        document.getElementById("commentData").dataset.commentId;
+          document.getElementById("commentData").dataset.commentId;
+        const newTitle = document.getElementById("title").value;
         const newCommentText = document.getElementById("textBox").value;
-        vscode.postMessage({ command: "updateComment", text: newCommentText, id: parseInt(newCommentId) });
+        const newComment = {
+          title: newTitle,
+          text: newCommentText,
+          id: parseInt(newCommentId),
+        };
+        vscode.postMessage({ command: "updateComment", data: newComment });
       }
     </script>
   </body>
