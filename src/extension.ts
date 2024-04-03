@@ -96,7 +96,7 @@ export async function activate(context: ExtensionContext) {
         );
 
         const webviewPath = path.resolve(__dirname, "../src/webview.html");
-        const cssPath = Uri.joinPath(context.extensionUri, "src", "custom.css");
+        const cssPath = Uri.joinPath(context.extensionUri, "src", "style.css");
         const cssUri = panel.webview.asWebviewUri(cssPath);
 
         fs.readFile(webviewPath, "utf-8", (err, data) => {
@@ -106,16 +106,17 @@ export async function activate(context: ExtensionContext) {
           }
 
           let htmlContent = data.replace("${cssPath}", cssUri.toString());
-          let commentText = comment && comment.comment ? comment.comment : "";
-          let title = comment && comment.title ? comment.title : "";
-          let commentId = comment && comment.id ? comment.id : "";
+          // let commentText = comment && comment.comment ? comment.comment : "";
+          // let title = comment && comment.title ? comment.title : "";
+          // let commentId = comment && comment.id ? comment.id : "";
 
-          htmlContent = htmlContent.replace("${commentText}", commentText);
-          htmlContent = htmlContent.replace(
-            "${commentId}",
-            commentId.toString()
-          );
-          htmlContent = htmlContent.replace("${commentTitle}", title);
+          // htmlContent = htmlContent.replace("${commentText}", commentText);
+          // htmlContent = htmlContent.replace(
+          //   "${commentId}",
+          //   commentId.toString()
+          // );
+          // htmlContent = htmlContent.replace("${commentTitle}", title);
+          // panel.webview.html = htmlContent;
           panel.webview.html = htmlContent;
 
           panel.webview.onDidReceiveMessage(
