@@ -30,7 +30,7 @@ let iconDecoration: DecorationOptions[] = [];
 let highlightDecoration: DecorationOptions[] = [];
 let icon: TextEditorDecorationType;
 let highlight: TextEditorDecorationType;
-const commentsFile: string = "comments.json";
+const COMMENTS_FILE = "comments.json";
 
 export async function activate(context: ExtensionContext) {
   treeDataProvider = new InlineCommentProvider();
@@ -47,7 +47,7 @@ export async function activate(context: ExtensionContext) {
     backgroundColor: "#8CBEB260",
   });
 
-  const filePath = getFilePath("comments.json");
+  const filePath = getFilePath(COMMENTS_FILE);
   if (filePath) {
     showComments(filePath);
   }
@@ -95,36 +95,40 @@ export async function activate(context: ExtensionContext) {
           }
         );
 
-        const webviewPath = path.resolve(__dirname, "../src/webview.html");
+        const webviewPath = Uri.joinPath(
+          context.extensionUri,
+          "src",
+          "webview.html"
+        );
         const cssPath = Uri.joinPath(context.extensionUri, "src", "style.css");
         const cssUri = panel.webview.asWebviewUri(cssPath);
 
-        fs.readFile(webviewPath, "utf-8", (err, data) => {
-          if (err) {
+        fs.promises
+          .readFile(webviewPath.fsPath, "utf-8")
+          .then((data) => {
+            // Get values from clicked comment
+            let commentText = comment && comment.comment ? comment.comment : "";
+            let title = comment && comment.title ? comment.title : "";
+            let commentId = comment && comment.id ? comment.id : "";
+
+            // Shows the comment's value in the webview HTML
+            let htmlContent = data
+              .replace("${cssPath}", cssUri.toString())
+              .replace("${commentText}", commentText)
+              .replace("${commentId}", commentId.toString())
+              .replace("${commentTitle}", title);
+
+            panel.webview.html = htmlContent;
+          })
+          .catch((err) => {
             window.showErrorMessage(`Error reading HTML file: ${err.message}`);
-            return;
-          }
+          });
 
-          // Get values from clicked comment if editing existing comment
-          let commentText = comment && comment.comment ? comment.comment : "";
-          let title = comment && comment.title ? comment.title : "";
-          let commentId = comment && comment.id ? comment.id : "";
-
-          let htmlContent = data.replace("${cssPath}", cssUri.toString());
-          htmlContent = htmlContent
-            .replace("${commentText}", commentText)
-            .replace("${commentId}", commentId.toString())
-            .replace("${commentTitle}", title);
-          panel.webview.html = htmlContent;
-
-          panel.webview.onDidReceiveMessage(
-            (message) => {
-              handleMessageFromWebview(message);
-            },
-            undefined,
-            context.subscriptions
-          );
-        });
+        panel.webview.onDidReceiveMessage(
+          handleMessageFromWebview,
+          undefined,
+          context.subscriptions
+        );
       }
     )
   );
@@ -176,8 +180,9 @@ export async function activate(context: ExtensionContext) {
 }
 
 export async function getComment(input: Range | number) {
-  const filePath = getFilePath("comments.json");
+  const filePath = getFilePath(COMMENTS_FILE);
   if (!filePath) {
+    window.showErrorMessage("File not found.");
     return;
   }
 
@@ -210,14 +215,9 @@ export function getWorkspaceFolderUri() {
 }
 
 function getRelativePath() {
-  try {
-    const absoluteFilePath = activeEditor.document.fileName;
-    const projectRoot = getWorkspaceFolderUri().fsPath;
-    return path.relative(projectRoot, absoluteFilePath);
-  } catch (error: any) {
-    console.error("Error:", error.message);
-    return "";
-  }
+  const absoluteFilePath = activeEditor.document.fileName;
+  const projectRoot = getWorkspaceFolderUri().fsPath;
+  return path.relative(projectRoot, absoluteFilePath);
 }
 
 function handleMessageFromWebview(message: any) {
@@ -232,7 +232,6 @@ function handleMessageFromWebview(message: any) {
     case "deleteComment":
       const { id: commentId } = message;
       deleteComment(commentId);
-      deactivate();
       break;
     case "updateComment":
       const newCommentId = message.data.id;
@@ -248,10 +247,10 @@ function handleMessageFromWebview(message: any) {
 }
 
 async function updateComment(id: number, comment: string, title: string) {
-  const jsonFilePath = getFilePath(commentsFile);
+  const jsonFilePath = getFilePath(COMMENTS_FILE);
 
   if (!jsonFilePath) {
-    window.showErrorMessage("JSON file not found");
+    window.showErrorMessage("File not found.");
     return;
   }
 
@@ -266,6 +265,7 @@ async function updateComment(id: number, comment: string, title: string) {
       const updatedData = { comments: existingComments };
       fs.writeFileSync(jsonFilePath, JSON.stringify(updatedData));
       treeDataProvider.refresh();
+      window.showInformationMessage("Comment successfully updated.");
     }
   } catch (error) {
     window.showErrorMessage(`Error updating file: ${error}`);
@@ -273,24 +273,36 @@ async function updateComment(id: number, comment: string, title: string) {
   }
 }
 
-async function deleteComment(id: number) {
-  const jsonFilePath = getFilePath(commentsFile);
+function deleteComment(id: number) {
+  const jsonFilePath = getFilePath(COMMENTS_FILE);
 
   if (!jsonFilePath) {
-    window.showErrorMessage("JSON file not found");
+    window.showErrorMessage("File not found");
     return;
   }
 
   try {
-    const existingComments = await readFromFile(jsonFilePath);
-    const commentIndex = existingComments.findIndex(
-      (comment: CommentType) => comment.id === id
-    );
-    if (commentIndex !== -1) {
-      existingComments.splice(commentIndex, 1);
-      const updatedData = { comments: existingComments };
-      fs.writeFileSync(jsonFilePath, JSON.stringify(updatedData));
-    }
+    window
+      .showWarningMessage(
+        "Are you sure you want to delete this comment? This cannot be undone.",
+        ...["Yes", "No"]
+      )
+      .then(async (answer) => {
+        if (answer === "Yes") {
+          deactivate();
+          window.showInformationMessage("Comment successfully deleted.");
+        }
+
+        const existingComments = await readFromFile(jsonFilePath);
+        const commentIndex = existingComments.findIndex(
+          (comment: CommentType) => comment.id === id
+        );
+        if (commentIndex !== -1) {
+          existingComments.splice(commentIndex, 1);
+          const updatedData = { comments: existingComments };
+          fs.writeFileSync(jsonFilePath, JSON.stringify(updatedData));
+        }
+      });
   } catch (error) {
     window.showErrorMessage(`Error deleting from file: ${error}`);
     return;
@@ -303,10 +315,10 @@ function saveToFile(
   title: string,
   commentText: string
 ) {
-  const jsonFilePath = getFilePath(commentsFile);
+  const jsonFilePath = getFilePath(COMMENTS_FILE);
 
   if (!jsonFilePath) {
-    window.showErrorMessage("JSON file not found");
+    window.showErrorMessage("File not found.");
     return;
   }
 
@@ -330,6 +342,7 @@ function saveToFile(
     dataFromFile.comments.push(commentData);
     const commentJson = JSON.stringify(dataFromFile);
     fs.writeFileSync(jsonFilePath, commentJson);
+    window.showInformationMessage("Comment successfully added.");
   } catch (error) {
     window.showErrorMessage(`Error saving to file: ${error}`);
     return;
@@ -339,8 +352,8 @@ function saveToFile(
 
 export async function readFromFile(filePath: string) {
   try {
-    const jsonData = await fs.promises.readFile(filePath, "utf-8");
-    const { comments } = JSON.parse(jsonData);
+    const data = await fs.promises.readFile(filePath, "utf-8");
+    const { comments } = JSON.parse(data);
     return comments;
   } catch (error: any) {
     if (error.code === "ENOENT") {
@@ -353,10 +366,16 @@ export async function readFromFile(filePath: string) {
   }
 }
 
+/**
+ * Get comments for a specific file
+ * @param {string} filePath - Relative path of the file
+ * @returns {Promise<CommentType[]>} - A promise that resolves to an array of CommentType objects
+ */
 async function getComments(filePath: string): Promise<CommentType[]> {
   try {
     if (activeEditor) {
       const fileName = getRelativePath();
+
       const existingComments = await readFromFile(filePath);
       return existingComments.filter(
         (comment: CommentType) => comment.fileName === fileName
@@ -370,6 +389,10 @@ async function getComments(filePath: string): Promise<CommentType[]> {
   }
 }
 
+/**
+ * Adds highlight and icon for comments
+ * @param {string} filePath - Active file
+ */
 async function showComments(filePath: string) {
   // Empty arrays to avoid duplicate decoration when adding a new comment
   iconDecoration = [];
