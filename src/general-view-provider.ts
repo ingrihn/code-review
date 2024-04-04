@@ -7,7 +7,7 @@ import {
   WebviewViewProvider,
   WebviewViewResolveContext,
 } from "vscode";
-import { getFilePath, getRubricsJson } from "./extension";
+import { getFilePath, readFromFile } from "./extension";
 
 export class GeneralViewProvider implements WebviewViewProvider {
   public static readonly viewType = "collabrate-general";
@@ -45,7 +45,7 @@ export class GeneralViewProvider implements WebviewViewProvider {
     try {
       const [data, rubricsJson] = await Promise.all([
         fs.promises.readFile(htmlFilePath.fsPath, "utf-8"),
-        getRubricsJson(getFilePath("rubrics.json")),
+        readFromFile(getFilePath("rubrics.json")),
       ]);
       webviewView.webview.html = data.replace("${cssPath}", cssUri.toString());
       webviewView.webview.postMessage({

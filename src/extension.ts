@@ -47,10 +47,10 @@ export async function activate(context: ExtensionContext) {
     backgroundColor: "#8CBEB260",
   });
 
-  const filePath = getFilePath(COMMENTS_FILE);
-  if (filePath) {
-    showComments(filePath);
-  }
+  const commentJson = getFilePath(COMMENTS_FILE);
+  const rubricsJson = getFilePath("rubrics.json");
+  checkIfFileExists(commentJson, "comments");
+  checkIfFileExists(rubricsJson, "rubrics");
 
   context.subscriptions.push(
     window.registerWebviewViewProvider(GeneralViewProvider.viewType, {
@@ -120,8 +120,10 @@ export async function activate(context: ExtensionContext) {
 
             panel.webview.html = htmlContent;
           })
-          .catch((err) => {
-            window.showErrorMessage(`Error reading HTML file: ${err.message}`);
+          .catch((error) => {
+            window.showErrorMessage(
+              `Error reading HTML file: ${error.message}`
+            );
           });
 
         panel.webview.onDidReceiveMessage(
@@ -133,11 +135,12 @@ export async function activate(context: ExtensionContext) {
     )
   );
 
+  // Get right comments when changing files
   context.subscriptions.push(
     window.onDidChangeActiveTextEditor((editor: TextEditor | undefined) => {
-      if (editor && filePath) {
+      if (editor && commentJson) {
         activeEditor = editor;
-        showComments(filePath);
+        showComments(commentJson);
       }
     })
   );
@@ -159,7 +162,7 @@ export async function activate(context: ExtensionContext) {
             (decoration) => {
               if (decoration.range.contains(clickedPosition)) {
                 highlightedRange = decoration.range;
-                return true; // Stop iteration once a match is found
+                return true; // Stop once a match is found
               }
               return false;
             }
@@ -181,12 +184,8 @@ export async function activate(context: ExtensionContext) {
 
 export async function getComment(input: Range | number) {
   const filePath = getFilePath(COMMENTS_FILE);
-  if (!filePath) {
-    window.showErrorMessage("File not found.");
-    return;
-  }
-
-  const allComments = await readFromFile(filePath);
+  const fileData = await readFromFile(filePath);
+  const allComments = fileData.comments;
   let comment: CommentType | undefined;
 
   if (input instanceof Range) {
@@ -249,21 +248,18 @@ function handleMessageFromWebview(message: any) {
 async function updateComment(id: number, comment: string, title: string) {
   const jsonFilePath = getFilePath(COMMENTS_FILE);
 
-  if (!jsonFilePath) {
-    window.showErrorMessage("File not found.");
-    return;
-  }
-
   try {
-    const existingComments = await readFromFile(jsonFilePath);
+    const fileData = await readFromFile(jsonFilePath);
+    const existingComments = fileData.comments;
     const commentIndex = existingComments.findIndex(
       (comment: CommentType) => comment.id === id
     );
+
     if (commentIndex !== -1) {
       existingComments[commentIndex].comment = comment;
       existingComments[commentIndex].title = title;
       const updatedData = { comments: existingComments };
-      fs.writeFileSync(jsonFilePath, JSON.stringify(updatedData));
+      fs.promises.writeFile(jsonFilePath, JSON.stringify(updatedData));
       treeDataProvider.refresh();
       window.showInformationMessage("Comment successfully updated.");
     }
@@ -293,14 +289,16 @@ function deleteComment(id: number) {
           window.showInformationMessage("Comment successfully deleted.");
         }
 
-        const existingComments = await readFromFile(jsonFilePath);
+        const fileData = await readFromFile(jsonFilePath);
+        const existingComments = fileData.comments;
         const commentIndex = existingComments.findIndex(
           (comment: CommentType) => comment.id === id
         );
         if (commentIndex !== -1) {
           existingComments.splice(commentIndex, 1);
           const updatedData = { comments: existingComments };
-          fs.writeFileSync(jsonFilePath, JSON.stringify(updatedData));
+          fs.promises.writeFile(jsonFilePath, JSON.stringify(updatedData));
+          treeDataProvider.refresh();
         }
       });
   } catch (error) {
@@ -309,18 +307,13 @@ function deleteComment(id: number) {
   }
 }
 
-function saveToFile(
+async function saveToFile(
   fileName: string,
   selection: Selection,
   title: string,
   commentText: string
 ) {
   const jsonFilePath = getFilePath(COMMENTS_FILE);
-
-  if (!jsonFilePath) {
-    window.showErrorMessage("File not found.");
-    return;
-  }
 
   try {
     const commentData: CommentType = {
@@ -338,31 +331,29 @@ function saveToFile(
       comment: commentText,
     };
 
-    const dataFromFile = JSON.parse(fs.readFileSync(jsonFilePath, "utf-8"));
-    dataFromFile.comments.push(commentData);
-    const commentJson = JSON.stringify(dataFromFile);
-    fs.writeFileSync(jsonFilePath, commentJson);
+    const fileData = await readFromFile(jsonFilePath);
+    const existingComments = fileData.comments;
+    existingComments.push(commentData);
+
+    const updatedData = { comments: existingComments };
+    const commentsJson = JSON.stringify(updatedData);
+
+    await fs.promises.writeFile(jsonFilePath, commentsJson);
     window.showInformationMessage("Comment successfully added.");
-  } catch (error) {
-    window.showErrorMessage(`Error saving to file: ${error}`);
+    treeDataProvider.refresh();
+  } catch (error: any) {
+    window.showErrorMessage(`Error saving to file: ${error.message}`);
     return;
   }
-  treeDataProvider.refresh();
 }
 
 export async function readFromFile(filePath: string) {
   try {
     const data = await fs.promises.readFile(filePath, "utf-8");
-    const { comments } = JSON.parse(data);
-    return comments;
+    return JSON.parse(data);
   } catch (error: any) {
-    if (error.code === "ENOENT") {
-      await fs.promises.writeFile(filePath, '{"comments": []}');
-      return [];
-    } else {
-      console.error(error);
-      return [];
-    }
+    console.error(`Error reading from file: ${error.message}`);
+    return;
   }
 }
 
@@ -376,7 +367,8 @@ async function getComments(filePath: string): Promise<CommentType[]> {
     if (activeEditor) {
       const fileName = getRelativePath();
 
-      const existingComments = await readFromFile(filePath);
+      const fileData = await readFromFile(filePath);
+      const existingComments = fileData.comments;
       return existingComments.filter(
         (comment: CommentType) => comment.fileName === fileName
       );
@@ -399,40 +391,38 @@ async function showComments(filePath: string) {
   highlightDecoration = [];
 
   const fileComments = await getComments(filePath);
-  fileComments.forEach((comment: CommentType) => {
-    const { start, end } = comment;
-    const startPos = new Position(start.line - 1, start.character - 1);
-    const endPos = new Position(end.line - 1, end.character - 1);
-    const lineLength = activeEditor.document.lineAt(end.line - 1).text.length;
-    const lineStartPosition = new Position(end.line - 1, 0);
-    const lineEndPosition = new Position(end.line - 1, lineLength);
-    iconDecoration.push({
-      range: new Range(lineStartPosition, lineEndPosition),
+  if (fileComments.length > 0) {
+    fileComments.forEach((comment: CommentType) => {
+      const { start, end } = comment;
+      const startPos = new Position(start.line - 1, start.character - 1);
+      const endPos = new Position(end.line - 1, end.character - 1);
+      const lineLength = activeEditor.document.lineAt(end.line - 1).text.length;
+      const lineStartPosition = new Position(end.line - 1, 0);
+      const lineEndPosition = new Position(end.line - 1, lineLength);
+      iconDecoration.push({
+        range: new Range(lineStartPosition, lineEndPosition),
+      });
+      highlightDecoration.push({ range: new Range(startPos, endPos) });
     });
-    highlightDecoration.push({ range: new Range(startPos, endPos) });
-  });
 
-  activeEditor.setDecorations(icon, iconDecoration);
-  activeEditor.setDecorations(highlight, highlightDecoration);
+    activeEditor.setDecorations(icon, iconDecoration);
+    activeEditor.setDecorations(highlight, highlightDecoration);
+  }
 }
 
 export function getFilePath(fileName: string) {
   return path.join(getWorkspaceFolderUri().fsPath, fileName);
 }
 
-export async function getRubricsJson(filePath: string) {
-  try {
-    const data = await fs.promises.readFile(filePath, "utf-8");
-    return JSON.parse(data);
-  } catch (error: any) {
-    if (error.code === "ENOENT") {
-      await fs.promises.writeFile(filePath, '{"rubrics": []}');
-      return [];
-    } else {
-      console.error(error);
-      return [];
-    }
-  }
+/**
+ * Checks if file exists, makes it it if doesn't
+ * @param {string} filePath - Relative path of file
+ * @param {string} arrayName - Name of initial array in JSON file
+ */
+function checkIfFileExists(filePath: string, arrayName: string) {
+  fs.promises.access(filePath, fs.constants.F_OK).catch(() => {
+    fs.promises.writeFile(filePath, `{"${arrayName}": []}`);
+  });
 }
 
 export function deactivate() {

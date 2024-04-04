@@ -42,7 +42,8 @@ export class InlineCommentProvider implements TreeDataProvider<InlineComment> {
   async getChildren(element?: InlineComment): Promise<InlineComment[]> {
     const comments: InlineComment[] = [];
     const filePath = getFilePath("comments.json");
-    const savedComments = await readFromFile(filePath);
+    const fileData = await readFromFile(filePath);
+    const savedComments = fileData.comments;
 
     if (!element) {
       const addedFileNames: Set<string> = new Set();
