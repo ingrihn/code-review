@@ -11859,6 +11859,7 @@ textarea.form-control-lg {
   display: flex;
   flex-direction: column;
   width: 100%;
+  margin-bottom: 1em;
 }
 
 body {
@@ -11867,8 +11868,8 @@ body {
   font-family: Helvetica, sans-serif;
 }
 
-.btn-group {
-  margin-bottom: 0.7em;
+#saveBtn {
+  margin-right: 0.5em;
 }
 
 .btn-primary {
@@ -11899,6 +11900,7 @@ body {
 
 .btn-sm, .btn-group-sm > .btn {
   font-size: 0.7em;
+  margin-bottom: 1em;
 }
 
 .btn-lg, .btn-group-lg > .btn {
@@ -11907,7 +11909,7 @@ body {
   border-radius: 10%;
 }
 
-#editBtns, #addBtnDiv {
+#editBtns, #addBtnDiv, #btnGroup {
   display: flex;
   justify-content: right;
 }

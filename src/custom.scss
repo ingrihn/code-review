@@ -10,6 +10,7 @@ $tertiary: #28443d;
     display: flex;
     flex-direction: column;
     width: 100%;
+    margin-bottom: 1em;
   } 
   
   body {
@@ -17,9 +18,9 @@ $tertiary: #28443d;
     background-color: #1e1f1c;
     font-family: Helvetica, sans-serif;
   }
-  
-  .btn-group {
-    margin-bottom: 0.7em;
+
+  #saveBtn {
+    margin-right: 0.5em;
   }
   
   .btn-primary {
@@ -54,6 +55,7 @@ $tertiary: #28443d;
 
   .btn-sm {
     font-size: 0.7em;
+    margin-bottom: 1em;
   }
 
   .btn-lg {
@@ -62,7 +64,7 @@ $tertiary: #28443d;
     border-radius: 10%;
   }
 
-  #editBtns, #addBtnDiv {
+  #editBtns, #addBtnDiv, #btnGroup {
     display: flex;
     justify-content: right;
   } 

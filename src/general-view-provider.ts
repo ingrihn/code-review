@@ -25,30 +25,29 @@ export class GeneralViewProvider implements WebviewViewProvider {
           webviewView.webview.options = {
               enableScripts: true,
           };
-  
+
       const cssUri = webviewView.webview.asWebviewUri(Uri.joinPath(this._extensionUri, 'src', 'custom.css'));
       const htmlFilePath = Uri.joinPath(
         this._extensionUri,
         "src",
         "general-comments.html"
       );
-
+      
       try {
-
         const [data, rubricsJson] = await Promise.all([
           fs.promises.readFile(htmlFilePath.fsPath, "utf-8"),
           getRubricsJson(getFilePath("rubrics.json"))
-      ]);
+        ]);
+
         webviewView.webview.html = data.replace("${cssPath}", cssUri.toString());
         webviewView.webview.postMessage({ command: 'rubricsJson', data: rubricsJson });
         setTimeout(() => {
-          webviewView.webview.postMessage({ command: 'rubricsJson', data: rubricsJson });
-          console.log("Message sent");
-      }, 3500);
+            webviewView.webview.postMessage({ command: 'rubricsJson', data: rubricsJson });
+        }, 3500);
 
-    } catch (error) {
-        console.error('Error resolving webview view:', error);
-    }
+      } catch (error) {
+          console.error('Error resolving webview view:', error);
+      }
   }
 }
   

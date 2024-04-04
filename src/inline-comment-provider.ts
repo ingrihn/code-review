@@ -1,4 +1,4 @@
-import { Event, EventEmitter, Position, Range, Selection, TreeDataProvider, TreeItem, TreeItemCollapsibleState, commands, window, workspace } from "vscode";
+import { Event, EventEmitter, Position, Range, Selection, TreeDataProvider, TreeItem, TreeItemCollapsibleState, ViewColumn, commands, window, workspace } from "vscode";
 import { InlineComment } from "./inline-comment";
 import { getComment, getFilePath, readFromFile } from "./extension";
 import { CommentType } from "./comment-type";
@@ -47,7 +47,8 @@ export class InlineCommentProvider implements TreeDataProvider<InlineComment> {
         return;
       }
       workspace.openTextDocument(commentItem.fileName).then( document => {
-        window.showTextDocument(document).then( async editor => {
+        const column: ViewColumn = 1;
+        window.showTextDocument(document, column).then( async editor => {
           let position = new Position(commentItem.startLine!-1, commentItem.startCharacter!-1);
           editor.selection = new Selection(position, position);
           let range = new Range(position, position);

@@ -16,24 +16,59 @@
     <h3>Legg inn generell kommentar</h3>
     <div id="rubricContainer"></div>
     <br />
-    <button
-      type="button"
-      class="btn btn-secondary btn-sm"
-      onclick="saveDraft()"
-    >
-      Lagre utkast
-    </button>
-    <button type="button" class="btn btn-primary btn-sm">Send inn</button>
+    <div id="btnGroup">
+      <button
+        id="saveBtn"
+        type="button"
+        class="btn btn-secondary btn-sm"
+        onclick="saveDraft()"
+      >
+        Lagre utkast
+      </button>
+      <button type="button" class="btn btn-primary btn-sm">Send inn</button>
+    </div>
     <script
       src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
       integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
       crossorigin="anonymous"
     ></script>
     <script>
+      const vscode = acquireVsCodeApi();
+
+      function saveDraft() {
+        let rubrics = document.getElementsByClassName("rubric");
+        rubrics = Array.from(rubrics);
+        rubrics.forEach((rubric) => {
+          let children = Array.from(rubric.children);
+          let commentBox = children.find((child) =>
+            child.classList.contains("commentBox")
+          );
+          let headerElement = children.find((child) =>
+            child.classList.contains("rubricTitle")
+          );
+          let title = headerElement.innerText.trim();
+          let radioGroupName = `radio-${title}`;
+          let radioBtns = document.getElementsByName(radioGroupName);
+          if (commentBox instanceof HTMLTextAreaElement) {
+            let commentText = commentBox.value;
+            let checkedBtn = -1;
+            for (i = 0; i < radioBtns.length; i++) {
+              if (radioBtns[i].checked) {
+                checkedBtn = i + 1;
+              }
+            }
+            let rubricInfo = {
+              comment: commentText,
+              score: checkedBtn,
+            };
+            localStorage.setItem(title, JSON.stringify(rubricInfo));
+            vscode.postMessage({ command: "draftStored" });
+          }
+        });
+      }
+
       window.addEventListener("message", (event) => {
         const message = event.data;
-
-        console.log(message);
         if (message.command === "rubricsJson") {
           const rubricsJson = message.data;
           if (rubricsJson && Array.isArray(rubricsJson.rubrics)) {
@@ -45,74 +80,79 @@
       function loadHTML(rubrics) {
         const rubricsContainer = document.getElementById("rubricContainer");
         rubricsContainer.innerHTML = "";
-
+        rubrics.rubrics = Array.from(rubrics.rubrics);
         rubrics.rubrics.forEach((rubric) => {
           const rubricElement = document.createElement("div");
-          rubricElement.innerHTML = `
-                      <div class="rubric">
-                        <h4 id="rubricTitle">
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="13"
-                            height="13"
-                            fill="currentColor"
-                            class="bi bi-search"
-                            viewBox="0 0 16 16"
-                          >
-                            <path
-                              d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0"
-                            />
-                          </svg>
-                          ${rubric.title}
-                        </h4>
-                        <p id="rubricDescription">
-                          ${rubric.description}
-                        </p>
-                        <textarea
-                          class="commentBox"
-                          placeholder="Skriv her."
-                          cols="40"
-                          rows="4"
-                        ></textarea
-                        ><br />
+          rubricElement.classList.add("rubric");
+          const rubricTitle = document.createElement("h4");
+          rubricTitle.classList.add("rubricTitle");
+          rubricTitle.innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="currentColor" class="bi bi-search" viewBox="0 0 16 16">
+                <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0"/>
+            </svg>
+            ${rubric.title}`;
 
-                        <div class="flex-container">
-                          <div class="radio-button-group">
-                            <label class="container"
-                              >1
-                              <input class="radio-button" type="radio" name="radio" />
-                              <span class="checkmark"></span>
-                            </label>
+          const rubricDescription = document.createElement("p");
+          rubricDescription.id = "rubricDescription";
+          rubricDescription.textContent = rubric.description;
 
-                            <label class="container"
-                              >2
-                              <input class="radio-button" type="radio" name="radio" />
-                              <span class="checkmark"></span>
-                            </label>
+          const storedDraft = JSON.parse(localStorage.getItem(rubric.title));
+          let comment = "";
+          if (storedDraft != null) {
+            comment = storedDraft.comment;
+          }
 
-                            <label class="container"
-                              >3
-                              <input class="radio-button" type="radio" name="radio" />
-                              <span class="checkmark"></span>
-                            </label>
+          let score = -1;
+          if (storedDraft != null) {
+            score = storedDraft.score;
+          }
 
-                            <label class="container"
-                              >4
-                              <input class="radio-button" type="radio" name="radio" />
-                              <span class="checkmark"></span>
-                            </label>
+          const commentBox = document.createElement("textarea");
+          commentBox.classList.add("commentBox");
+          commentBox.placeholder = "Skriv her.";
+          commentBox.cols = "40";
+          commentBox.rows = "4";
+          commentBox.textContent = comment;
 
-                            <label class="container"
-                              >5
-                              <input class="radio-button" type="radio" name="radio" />
-                              <span class="checkmark"></span>
-                            </label>
-                          </div>
-                        </div>
-                    </div>
-                    <br />
-                    `;
+          rubricElement.appendChild(rubricTitle);
+          rubricElement.appendChild(rubricDescription);
+          rubricElement.appendChild(commentBox);
+
+          const space = document.createElement("br");
+
+          if (rubric.has_score === "true") {
+            const radioContainer = document.createElement("div");
+            radioContainer.classList.add("flex-container");
+
+            const radioGroup = document.createElement("div");
+            radioGroup.classList.add("radio-button-group");
+
+            for (let i = 1; i <= 5; i++) {
+              const label = document.createElement("label");
+              label.classList.add("container");
+              label.textContent = i;
+
+              const radioButton = document.createElement("input");
+              radioButton.classList.add("radio-button");
+              radioButton.type = "radio";
+              radioButton.name = `radio-${rubric.title}`;
+              if (i === score) {
+                radioButton.checked = true;
+              }
+
+              const checkmark = document.createElement("span");
+              checkmark.classList.add("checkmark");
+
+              label.appendChild(radioButton);
+              label.appendChild(checkmark);
+              radioGroup.appendChild(label);
+            }
+
+            radioContainer.appendChild(radioGroup);
+            rubricElement.appendChild(radioContainer);
+          }
           rubricsContainer.appendChild(rubricElement);
+          rubricsContainer.appendChild(space);
         });
       }
     </script>

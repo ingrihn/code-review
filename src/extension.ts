@@ -54,14 +54,16 @@ context.subscriptions.push(
   window.registerWebviewViewProvider(GeneralViewProvider.viewType, {
       resolveWebviewView: async (webviewView, _context, _token) => {
         const webview = await generalViewProvider.resolveWebviewView(webviewView, _context, _token);
-        const disposable = webviewView.onDidChangeVisibility(async e => {
+        context.subscriptions.push(webviewView.onDidChangeVisibility(async e => {
         try {
           await generalViewProvider.resolveWebviewView(webviewView, _context, _token);
         } catch (error) {
           console.error('Error fetching rubrics JSON:', error);
         }
-        });
-        context.subscriptions.push (disposable);
+        }));
+        context.subscriptions.push(webviewView.webview.onDidReceiveMessage((message) => {
+          handleMessageFromWebview(message);
+        }));
         return webview; 
       }
   })
@@ -196,7 +198,7 @@ export async function getComment(input: Range | number) {
   return comment;
 }
 
-function handleMessageFromWebview(message: any) {
+export function handleMessageFromWebview(message: any) {
   switch (message.command) {
     case "addComment":
       const commentText = message.data.text;
@@ -211,13 +213,14 @@ function handleMessageFromWebview(message: any) {
       deactivate();
       break;
     case "updateComment":
-      //const { id: newCommentId, data: newCommentText } = message;
       const newCommentId = message.data.id;
       const newTitle = message.data.title;
       const newCommentText = message.data.text;
       updateComment(newCommentId, newCommentText, newTitle);
       deactivate();
       break;
+    case "draftStored":
+      window.showInformationMessage("Draft saved successfully");
     default:
       deactivate();
       break; // Handle unknown command
