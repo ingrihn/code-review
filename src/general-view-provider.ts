@@ -7,7 +7,7 @@ import {
   WebviewViewProvider,
   WebviewViewResolveContext,
 } from "vscode";
-import { getFilePath, readFromFile } from "./extension";
+import { getFilePath, readFromFile } from "./utils/file-utils";
 
 export class GeneralViewProvider implements WebviewViewProvider {
   public static readonly viewType = "collabrate-general";

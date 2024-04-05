@@ -13,14 +13,14 @@ import {
   workspace,
 } from "vscode";
 import {
-  getComment,
   getFilePath,
   getWorkspaceFolderUri,
   readFromFile,
-} from "./extension";
+} from "./utils/file-utils";
 
 import { CommentType } from "./comment-type";
 import { InlineComment } from "./inline-comment";
+import { getComment } from "./utils/comment-utils";
 
 export class InlineCommentProvider implements TreeDataProvider<InlineComment> {
   private _onDidChangeTreeData: EventEmitter<
