@@ -14,7 +14,7 @@
   </head>
   <body>
     <h3>Legg inn generell kommentar</h3>
-    <div id="rubricContainer"></div>
+    <div id="rubricContainer">${rubrics}</div>
     <br />
     <div id="btnGroup">
       <button
@@ -67,15 +67,16 @@
         });
       }
 
-      window.addEventListener("message", (event) => {
-        const message = event.data;
-        if (message.command === "rubricsJson") {
-          const rubricsJson = message.data;
-          if (rubricsJson && Array.isArray(rubricsJson.rubrics)) {
-            loadHTML(rubricsJson);
-          }
-        }
-      });
+      // window.addEventListener("message", (event) => {
+      //   //vscode.postMessage({ command: "messageReceived" });
+      //   const message = event.data;
+      //   if (message.command === "rubricsJson") {
+      //     const rubricsJson = message.data;
+      //     if (rubricsJson && Array.isArray(rubricsJson.rubrics)) {
+      //       loadHTML(rubricsJson);
+      //     }
+      //   }
+      // });
 
       function loadHTML(rubrics) {
         const rubricsContainer = document.getElementById("rubricContainer");
