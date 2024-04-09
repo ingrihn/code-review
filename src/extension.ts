@@ -33,6 +33,7 @@ export let highlightDecoration: DecorationOptions[] = [];
 export let icon: TextEditorDecorationType;
 export let highlight: TextEditorDecorationType;
 export const COMMENTS_FILE = "comments.json";
+export const GENERAL_COMMENTS_FILE = "general-comments.json";
 let generalViewProvider: GeneralViewProvider;
 let panel: WebviewPanel;
 const viewId = "collabrate-inline";
@@ -53,36 +54,34 @@ export async function activate(context: ExtensionContext) {
 
   // Makes JSON files if they don't already exist
   const commentsJson = getFilePath(COMMENTS_FILE);
+  const generalCommentsJson = getFilePath(GENERAL_COMMENTS_FILE);
   const rubricsJson = getFilePath("rubrics.json");
   if (checkIfFileExists(commentsJson, "comments")) {
     showComments(commentsJson);
   }
+  checkIfFileExists(generalCommentsJson, "generalComments");
   checkIfFileExists(rubricsJson, "rubrics");
 
+  // Register provider for the webview view and show it every time it is opened
   context.subscriptions.push(
     window.registerWebviewViewProvider(GeneralViewProvider.viewType, {
-      resolveWebviewView: async (webviewView, _context, _token) => {
-        const webview = await generalViewProvider.resolveWebviewView(
-          webviewView,
-          _context,
-          _token
-        );
-        const disposable = webviewView.onDidChangeVisibility(async (e) => {
+        resolveWebviewView: async (webviewView, _context, _token) => {
+          await generalViewProvider.resolveWebviewView(webviewView, _context, _token);
+          context.subscriptions.push(webviewView.onDidChangeVisibility(async e => {
           try {
-            await generalViewProvider.resolveWebviewView(
-              webviewView,
-              _context,
-              _token
-            );
+            await generalViewProvider.resolveWebviewView(webviewView, _context, _token);
           } catch (error) {
-            console.error("Error fetching rubrics JSON:", error);
+            console.error('Error fetching rubrics JSON:', error);
           }
-        });
-        context.subscriptions.push(disposable);
-        return webview;
-      },
+          }));
+          context.subscriptions.push(webviewView.webview.onDidReceiveMessage((message) => {
+            handleMessageFromWebview(message);
+          }));
+        }
     })
   );
+  
+  // Register provider for the tree view
   window.registerTreeDataProvider(viewId, treeDataProvider);
 
   // Shows the webview panel
@@ -96,7 +95,7 @@ export async function activate(context: ExtensionContext) {
 
         panel = window.createWebviewPanel(
           "commentSidebar",
-          "Comment Sidebar",
+          "New Inline Comment",
           ViewColumn.Beside,
           {
             enableScripts: true,

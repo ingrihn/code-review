@@ -35,11 +35,11 @@ export class InlineCommentProvider implements TreeDataProvider<InlineComment> {
     );
   }
 
-  getTreeItem(element: InlineComment): TreeItem {
+  public getTreeItem(element: InlineComment): TreeItem {
     return element;
   }
 
-  async getChildren(element?: InlineComment): Promise<InlineComment[]> {
+  public async getChildren(element?: InlineComment): Promise<InlineComment[]> {
     const comments: InlineComment[] = [];
     const filePath = getFilePath("comments.json");
     const fileData = await readFromFile(filePath);
@@ -49,6 +49,7 @@ export class InlineCommentProvider implements TreeDataProvider<InlineComment> {
       const addedFileNames: Set<string> = new Set();
 
       savedComments.forEach((comment: { fileName: string }) => {
+        
         if (!addedFileNames.has(comment.fileName)) {
           const fileNameItem = new InlineComment(
             comment.fileName,
@@ -66,6 +67,7 @@ export class InlineCommentProvider implements TreeDataProvider<InlineComment> {
           comment: string;
           start: { line: number; character: number };
         }) => {
+          
           if (element.label === comment.fileName) {
             const commentItem = new InlineComment(
               comment.title,
@@ -75,6 +77,7 @@ export class InlineCommentProvider implements TreeDataProvider<InlineComment> {
               comment.start.line,
               comment.start.character
             );
+            
             commentItem.command = {
               command: "extension.navigateToComment",
               title: commentItem.label,
@@ -88,7 +91,11 @@ export class InlineCommentProvider implements TreeDataProvider<InlineComment> {
     return Promise.resolve(comments);
   }
 
-  navigateToComment(commentItem: InlineComment) {
+  /**
+   * Navigates to the comment in its associated file and opens the webview panel for the comment
+   * @param {InlineComment} commentItem The inline comment to navigate to.
+   */
+  private navigateToComment(commentItem: InlineComment) {
     if (
       commentItem.fileName === undefined ||
       commentItem.startLine === undefined ||
@@ -97,13 +104,16 @@ export class InlineCommentProvider implements TreeDataProvider<InlineComment> {
       return;
     }
     const fileUri = Uri.joinPath(getWorkspaceFolderUri(), commentItem.fileName);
+
     workspace.openTextDocument(fileUri).then((document) => {
       const column: ViewColumn = 1;
       window.showTextDocument(document, column).then(async (editor) => {
+
         let position = new Position(
           commentItem.startLine! - 1,
           commentItem.startCharacter! - 1
         );
+
         editor.selection = new Selection(position, position);
         let range = new Range(position, position);
         editor.revealRange(range);
@@ -113,7 +123,10 @@ export class InlineCommentProvider implements TreeDataProvider<InlineComment> {
     });
   }
 
-  refresh(): void {
+  /**
+   * Updates the tree view
+   */
+  public refresh(): void {
     this._onDidChangeTreeData.fire();
   }
 }

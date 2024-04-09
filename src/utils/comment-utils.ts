@@ -14,6 +14,7 @@ import {
 import { Position, Range, window } from "vscode";
 import {
   addComment,
+  addGeneralComments,
   getFilePath,
   getRelativePath,
   readFromFile,
@@ -22,7 +23,7 @@ import {
 import { CommentType } from "../comment-type";
 
 /**
- * Handles messages received from the webview.
+ * Handles messages received from the webview panel or webview view.
  * @param {any} message - The message received from the webview.
  */
 export function handleMessageFromWebview(message: any) {
@@ -44,6 +45,10 @@ export function handleMessageFromWebview(message: any) {
       const newCommentText = message.data.text;
       updateComment(newCommentId, newCommentText, newTitle);
       deactivate();
+      break;
+    case "draftStored":
+      const commentsData = message.data;
+      addGeneralComments(commentsData);
       break;
     default:
       deactivate();

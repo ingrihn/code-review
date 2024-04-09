@@ -18,64 +18,71 @@ export class GeneralViewProvider implements WebviewViewProvider {
     this._extensionUri = extensionUri;
   }
 
-  getView(): WebviewView | undefined {
+  public getView(): WebviewView | undefined {
     return this._view;
   }
   
-    public async resolveWebviewView(
-          webviewView: WebviewView,
-          context: WebviewViewResolveContext,
-          _token: CancellationToken,
-      ) {
-          this._view = webviewView;
+  public async resolveWebviewView(
+        webviewView: WebviewView,
+        context: WebviewViewResolveContext,
+        _token: CancellationToken,
+    ) {
+        this._view = webviewView;
+    
+        webviewView.webview.options = {
+            enableScripts: true,
+        };
+
+    const cssUri = webviewView.webview.asWebviewUri(Uri.joinPath(this._extensionUri, 'src', 'style.css'));
+    const htmlFilePath = Uri.joinPath(
+      this._extensionUri,
+      "src",
+      "general-comments.html"
+    );
+    
+    try {
+      const [data, rubricsJson] = await Promise.all([
+        fs.promises.readFile(htmlFilePath.fsPath, "utf-8"),
+        readFromFile(getFilePath("rubrics.json"))
+      ]);
+
+      let rubricHtml = await this.loadHtml(rubricsJson);
+
+      //Sets the CSS and load the HTML for the rubrics into the webview view
+      let htmlContent = data
+        .replace("${cssPath}", cssUri.toString())
+        .replace("${rubrics}", rubricHtml);
       
-          webviewView.webview.options = {
-              enableScripts: true,
-          };
+      webviewView.webview.html = htmlContent;
 
-      const cssUri = webviewView.webview.asWebviewUri(Uri.joinPath(this._extensionUri, 'src', 'style.css'));
-      const htmlFilePath = Uri.joinPath(
-        this._extensionUri,
-        "src",
-        "general-comments.html"
-      );
-
-      
-
-      // const webviewPath = path.resolve(__dirname, "../src/webview.html");
-      // const cssPath = Uri.joinPath(context.extensionUri, "src", "custom.css");
-      // const cssUri = panel.webview.asWebviewUri(cssPath);
-      
-      try {
-        const [data, rubricsJson] = await Promise.all([
-          fs.promises.readFile(htmlFilePath.fsPath, "utf-8"),
-          readFromFile(getFilePath("rubrics.json"))
-        ]);
-
-        let rubricHtml = this.loadHtml(rubricsJson);
-
-        let htmlContent = data
-          .replace("${cssPath}", cssUri.toString())
-          .replace("${rubrics}", rubricHtml);
-
-        webviewView.webview.html = htmlContent;
-        // webviewView.webview.postMessage({ command: 'rubricsJson', data: rubricsJson });
-        // setTimeout(() => {
-        //   console.log("test2");
-        //   webviewView.webview.postMessage({ command: 'rubricsJson', data: rubricsJson });
-        // }, 3500);
-      
-      } catch (error) {
-          console.error('Error resolving webview view:', error);
-      }
+    } catch (error) {
+        console.error('Error resolving webview view:', error);
+    }
   }
 
-  private loadHtml(rubrics: any): string {
+  /**
+   * Creates the HTML for the rubrics associated with the general comments.
+   * @param {any} rubrics The list of rubric objects.
+   * @returns {Promise<string>} The HTML for the rubrics.
+   */
+  private async loadHtml(rubrics: any): Promise<string> {
     let content = "";
+    const fileData = await readFromFile(getFilePath("general-comments.json"));
+    const savedComments = fileData.generalComments;
     rubrics.rubrics = Array.from(rubrics.rubrics);
+
     rubrics.rubrics.forEach((rubric: any) => {
-    //const storedDraft = JSON.parse(localStorage.getItem(rubric.title));
-      content += `<div class="rubric">
+      let rubricId = Number(rubric.id);
+      let commentText = "";
+      let score = undefined;
+
+      if (savedComments.length > 0) {
+        let savedComment = savedComments.find((generalComment: { id: number; comment: string; rubricId: number; score?: number }) => generalComment.rubricId === rubricId);
+        commentText = savedComment.comment;
+        score = savedComment.score;
+      }
+      
+      content += `<div class="rubric" data-rubric-id="${rubricId}">
       <h4 id="rubricTitle">
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -99,7 +106,7 @@ export class GeneralViewProvider implements WebviewViewProvider {
         placeholder="Skriv her."
         cols="40"
         rows="4"
-      ></textarea
+      >${commentText}</textarea
       ><br />
       `;
       if (rubric.has_score === "true") {
@@ -107,10 +114,14 @@ export class GeneralViewProvider implements WebviewViewProvider {
         <div class="radio-button-group">`;
         for (let i = 1; i <= 5; i++) {
           content += `<label class="container"
-          >${i}
-          <input class="radio-button" type="radio" name="radio" />
-          <span class="checkmark"></span>
-        </label>`;
+          >${i}`;
+          if (score === i) {
+            content += `<input class="radio-button" type="radio" name="radio-${rubric.id}" checked />`;
+          } else {
+            content += `<input class="radio-button" type="radio" name="radio-${rubric.id}" />`;
+          }
+          content += `<span class="checkmark"></span>
+          </label>`;
         }
         content += `</div></div>`;
       }
@@ -118,16 +129,5 @@ export class GeneralViewProvider implements WebviewViewProvider {
       <br />`;
     });
     return content;
-    
   }
-  
-
- 
-  // public setMessageReceived(messageReceived: boolean) {
-  //   this.messageReceived = messageReceived;
-  // }
-
-  // public getMessageReceived(): boolean {
-  //   return this.messageReceived;
-  // }
 }

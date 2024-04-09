@@ -1,10 +1,11 @@
 import * as fs from "fs";
 
-import { COMMENTS_FILE, activeEditor, treeDataProvider } from "../extension";
+import { COMMENTS_FILE, GENERAL_COMMENTS_FILE, activeEditor, treeDataProvider } from "../extension";
 import { Selection, Uri, window, workspace } from "vscode";
 
 import { CommentType } from "../comment-type";
 import path from "path";
+import { GeneralComment } from "../general-comment";
 
 /**
  * Reads contents of a given JSON file
@@ -22,9 +23,9 @@ export async function readFromFile(filePath: string): Promise<any> {
 }
 
 /**
- * Saves new comment in the JSON file
+ * Saves a new inline comment in the JSON file
  * @param {string} fileName - The name of the file.
- * @param {Selection} selection - The highlited code lines.
+ * @param {Selection} selection - The highlighted code lines.
  * @param {string} title - The title of the comment.
  * @param {string} commentText - The text of the comment.
  */
@@ -49,7 +50,7 @@ export async function addComment(
         character: selection.end.character + 1,
       },
       title: title,
-      comment: commentText,
+      comment: commentText
     };
 
     const fileData = await readFromFile(jsonFilePath);
@@ -62,6 +63,41 @@ export async function addComment(
     await fs.promises.writeFile(jsonFilePath, commentsJson);
     window.showInformationMessage("Comment successfully added.");
     treeDataProvider.refresh();
+  } catch (error: any) {
+    window.showErrorMessage(`Error saving to file: ${error.message}`);
+    return;
+  }
+}
+
+/**
+ * Saves a new draft of general comments in a JSON file
+ * @param {{ comment: string; score: number; rubricId: number }[]} generalComments The comments to save.
+ */
+export async function addGeneralComments(
+  generalComments: { comment: string; score: number; rubricId: number }[]
+) {
+  const jsonFilePath = getFilePath(GENERAL_COMMENTS_FILE);
+
+  try {
+    const newDraft: GeneralComment[] = [];
+
+    generalComments.forEach((generalComment: any) => {
+      if (generalComment.comment !== "" || generalComment.score !== -1) {
+        const generalCommentData: GeneralComment = {
+          id: Date.now(),
+          comment: generalComment.comment,
+          score: generalComment.score,
+          rubricId: generalComment.rubricId
+        };
+        newDraft.push(generalCommentData);
+      }
+    });
+
+    const updatedData = { generalComments: newDraft };
+    const generalCommentsJson = JSON.stringify(updatedData);
+    await fs.promises.writeFile(jsonFilePath, generalCommentsJson);
+    window.showInformationMessage("Draft saved successfully.");
+
   } catch (error: any) {
     window.showErrorMessage(`Error saving to file: ${error.message}`);
     return;

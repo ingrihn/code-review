@@ -59,7 +59,7 @@
     "viewsWelcome": [
       {
         "view": "collabrate-inline",
-        "contents": "No inline comments found. Create a new comment by highlighting the relevant code lines, right-clicking and choosing \n\"Collabrate\"\n"
+        "contents": "No inline comments found. Create a new comment by highlighting the relevant code lines, right-clicking and choosing \n\"Collabrate: Add Comment\"\n"
       }
     ]
   },
