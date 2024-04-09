@@ -57,7 +57,6 @@ export class GeneralViewProvider implements WebviewViewProvider {
           command: "rubricsJson",
           data: rubricsJson,
         });
-        console.log("Message sent");
       }, 3500);
     } catch (error) {
       console.error("Error resolving webview view:", error);

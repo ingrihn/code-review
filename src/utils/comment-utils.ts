@@ -52,7 +52,7 @@ export function handleMessageFromWebview(message: any) {
 }
 
 /**
- * Get comments for a specific file
+ * Get comments for a specific file.
  * @param {string} filePath - Relative path of the file.
  * @returns {Promise<CommentType[]>} - An array of CommentType objects.
  */
@@ -109,8 +109,8 @@ export async function showComments(filePath: string) {
 }
 
 /**
- * Gets a comment based on
- * @param {Range | number} input - Range of clicked comment or ID of comment
+ * Gets a comment based on clicked range or ID
+ * @param {Range | number} input - Range of clicked comment or ID of comment.
  @returns {Promise<CommentType | undefined>} - A promise that resolves to the retrieved comment or undefined if not found.
  */
 export async function getComment(
@@ -173,10 +173,11 @@ export async function updateComment(
         fs.promises.writeFile(jsonFilePath, JSON.stringify(updatedData));
         treeDataProvider.refresh();
         window.showInformationMessage("Comment successfully updated.");
+        // showMessageWithTimeout("Comment successfully updated.");
       }
     }
   } catch (error) {
-    window.showErrorMessage(`Error updating file: ${error}`);
+    window.showErrorMessage(`Error updating: ${error}`);
     return;
   }
 }

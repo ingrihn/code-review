@@ -1,71 +1,66 @@
-# collabrate README
+# CollabRate
 
-This is the README for your extension "collabrate". After writing up a brief description, we recommend including the following sections.
+CollabRate is a Visual Studio Code extension that enables users to write inline and general comments directly in the editor. By co-locating these functions, we streamline the feedback process and provide a seamless experience.
 
-## Features
+## Startup
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+1. Download the repository.
+2. Open the folder in Visual Studio Code.
+3. Start the extension by pressing _F5_ or clicking on the _Run Extension_ button.
 
-For example if there is an image subfolder under your extension project workspace:
+This will open a new editor where you can select the project you wish to review.
 
-\!\[feature X\]\(images/feature-x.png\)
+## Inline comments
 
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+Inline comments are helpuful for directly linking your comment with the relevant lines of code.
 
-## Requirements
+1. Highlight the code line(s) you want to comment on.
+2. Right-click and select _CollabRate: Add Comment_.
+3. A webview panel will appear to the right. Insert a title and a comment.
+4. Click on _Add_ when you are satisfied.
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+The corresponding code line(s) will receive a teal background and feature a small comment icon at the end. All comments are stored in `comments.json`and adhere to the format in `comment-type.ts`:
 
-## Extension Settings
+```
+export interface InlineCommentType {
+    id: number;
+    fileName: string;
+    start: {
+      line: number;
+      character: number;
+    };
+    end: {
+      line: number;
+      character: number;
+    };
+    title: string;
+    comment: string;
+  }
+```
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
+### Editing inline comments (update and delete)
 
-For example:
+Click within the highlighted range, and the webview panel will open to the right, displaying the title and comment. Edit or delete the comment as needed. The file will be updated accordingly.
 
-This extension contributes the following settings:
+### Overview of all inline comments
 
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
+All inline comments are conveniently listed in one place for easier management.
 
-## Known Issues
+1. Click on _CollabRate_ (comment icon) in the Activity Bar. A webviewview will open to the left and they will be grpuped by file under _Inline comments_.
+2. Click on a comment to open the corresponding file in a new tab. The comment will also be shown in the webview panel to the right.
 
-Calling out known issues can help limit users opening duplicate issues against your extension.
+## General comments
 
-## Release Notes
+To address issues that touch upon several files/themes, users can add general comments based on pre-defined rubrics. Click on _CollabRate_ (comment icon) in the Activity Bar to open the new panel on the left and see under _General comments_.
 
-Users appreciate release notes as you update your extension.
+The rubrics are retrieved from `rubrics.json`. Each rubric includes a prompt that users can answer with text and an optional Likert-score.
 
-### 1.0.0
+```
+export interface GeneralCommentType {
+    title: string;
+    description: string;
+    has_score: boolean;
+}
+```
 
-Initial release of ...
-
-### 1.0.1
-
-Fixed issue #.
-
-### 1.1.0
-
-Added features X, Y, and Z.
-
----
-
-## Following extension guidelines
-
-Ensure that you've read through the extensions guidelines and follow the best practices for creating your extension.
-
-* [Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
-
-## Working with Markdown
-
-You can author your README using Visual Studio Code. Here are some useful editor keyboard shortcuts:
-
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux).
-* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux).
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets.
-
-## For more information
-
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
-
-**Enjoy!**
+To save what you has written so far, scroll to the bottom og the _General comments_ tab and click on _Save as draft._ If you wish to complete your review, click on `Submit review`.
