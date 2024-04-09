@@ -1,11 +1,16 @@
 import * as fs from "fs";
 
-import { COMMENTS_FILE, GENERAL_COMMENTS_FILE, activeEditor, treeDataProvider } from "../extension";
+import {
+  COMMENTS_FILE,
+  GENERAL_COMMENTS_FILE,
+  activeEditor,
+  treeDataProvider,
+} from "../extension";
 import { Selection, Uri, window, workspace } from "vscode";
 
 import { CommentType } from "../comment-type";
-import path from "path";
 import { GeneralComment } from "../general-comment";
+import path from "path";
 
 /**
  * Reads contents of a given JSON file
@@ -50,7 +55,7 @@ export async function addComment(
         character: selection.end.character + 1,
       },
       title: title,
-      comment: commentText
+      comment: commentText,
     };
 
     const fileData = await readFromFile(jsonFilePath);
@@ -87,7 +92,7 @@ export async function addGeneralComments(
           id: Date.now(),
           comment: generalComment.comment,
           score: generalComment.score,
-          rubricId: generalComment.rubricId
+          rubricId: generalComment.rubricId,
         };
         newDraft.push(generalCommentData);
       }
@@ -97,7 +102,6 @@ export async function addGeneralComments(
     const generalCommentsJson = JSON.stringify(updatedData);
     await fs.promises.writeFile(jsonFilePath, generalCommentsJson);
     window.showInformationMessage("Draft saved successfully.");
-
   } catch (error: any) {
     window.showErrorMessage(`Error saving to file: ${error.message}`);
     return;

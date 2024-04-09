@@ -2,9 +2,14 @@
   --primary-color: #8cbeb2;
   --secondary-color: #557a70;
   --tertiary-color: #28443d;
+
+  --dark-background: #1e1f1c;
+  --dark-text: #cccccc;
+
+  --light-background: #ffffff;
+  --light-text: #525252;
 }
 
-/* Now you can use these variables throughout your stylesheet */
 .commentBox {
   display: flex;
   flex-direction: column;
@@ -14,8 +19,18 @@
 
 body {
   margin-top: 0.5em;
-  background-color: #1e1f1c;
   font-family: Helvetica, sans-serif;
+}
+
+body.vscode-dark,
+body.vscode-high-contrast {
+  background-color: var(--dark-background);
+  color: var(--dark-text);
+}
+
+body.vscode-light {
+  background-color: var(--light-background);
+  color: var(--light-text);
 }
 
 #saveBtn {
@@ -73,17 +88,11 @@ body {
 h1 {
   font-size: 1.3em;
   font-weight: bold;
-  color: #cccccc;
-}
-
-h2 {
-  color: #cccccc;
 }
 
 h3 {
   font-size: 0.9em;
   font-weight: bold;
-  color: #cccccc;
 }
 
 h4 {
@@ -126,9 +135,17 @@ input[class="btn-check"]:hover + label {
 
 .rubric {
   padding: 0.5em;
-  background-color: #272822;
   border: 0.5px solid #525252;
-  color: #cccccc;
+}
+
+/* Light mode for rubric */
+body.vscode-light #rubricContainer .rubric {
+  background-color: #f8f8f8;
+}
+
+/* Dark mode for rubric */
+body.vscode-dark #rubricContainer .rubric {
+  background-color: #272822;
 }
 
 .bi-search {

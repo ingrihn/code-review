@@ -65,22 +65,34 @@ export async function activate(context: ExtensionContext) {
   // Register provider for the webview view and show it every time it is opened
   context.subscriptions.push(
     window.registerWebviewViewProvider(GeneralViewProvider.viewType, {
-        resolveWebviewView: async (webviewView, _context, _token) => {
-          await generalViewProvider.resolveWebviewView(webviewView, _context, _token);
-          context.subscriptions.push(webviewView.onDidChangeVisibility(async e => {
-          try {
-            await generalViewProvider.resolveWebviewView(webviewView, _context, _token);
-          } catch (error) {
-            console.error('Error fetching rubrics JSON:', error);
-          }
-          }));
-          context.subscriptions.push(webviewView.webview.onDidReceiveMessage((message) => {
+      resolveWebviewView: async (webviewView, _context, _token) => {
+        await generalViewProvider.resolveWebviewView(
+          webviewView,
+          _context,
+          _token
+        );
+        context.subscriptions.push(
+          webviewView.onDidChangeVisibility(async (e) => {
+            try {
+              await generalViewProvider.resolveWebviewView(
+                webviewView,
+                _context,
+                _token
+              );
+            } catch (error) {
+              console.error("Error fetching rubrics JSON:", error);
+            }
+          })
+        );
+        context.subscriptions.push(
+          webviewView.webview.onDidReceiveMessage((message) => {
             handleMessageFromWebview(message);
-          }));
-        }
+          })
+        );
+      },
     })
   );
-  
+
   // Register provider for the tree view
   window.registerTreeDataProvider(viewId, treeDataProvider);
 
@@ -95,7 +107,7 @@ export async function activate(context: ExtensionContext) {
 
         panel = window.createWebviewPanel(
           "commentSidebar",
-          "New Inline Comment",
+          "Inline Comment",
           ViewColumn.Beside,
           {
             enableScripts: true,

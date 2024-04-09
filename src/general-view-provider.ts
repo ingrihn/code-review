@@ -21,29 +21,31 @@ export class GeneralViewProvider implements WebviewViewProvider {
   public getView(): WebviewView | undefined {
     return this._view;
   }
-  
-  public async resolveWebviewView(
-        webviewView: WebviewView,
-        context: WebviewViewResolveContext,
-        _token: CancellationToken,
-    ) {
-        this._view = webviewView;
-    
-        webviewView.webview.options = {
-            enableScripts: true,
-        };
 
-    const cssUri = webviewView.webview.asWebviewUri(Uri.joinPath(this._extensionUri, 'src', 'style.css'));
+  public async resolveWebviewView(
+    webviewView: WebviewView,
+    context: WebviewViewResolveContext,
+    _token: CancellationToken
+  ) {
+    this._view = webviewView;
+
+    webviewView.webview.options = {
+      enableScripts: true,
+    };
+
+    const cssUri = webviewView.webview.asWebviewUri(
+      Uri.joinPath(this._extensionUri, "src", "style.css")
+    );
     const htmlFilePath = Uri.joinPath(
       this._extensionUri,
       "src",
       "general-comments.html"
     );
-    
+
     try {
       const [data, rubricsJson] = await Promise.all([
         fs.promises.readFile(htmlFilePath.fsPath, "utf-8"),
-        readFromFile(getFilePath("rubrics.json"))
+        readFromFile(getFilePath("rubrics.json")),
       ]);
 
       let rubricHtml = await this.loadHtml(rubricsJson);
@@ -52,11 +54,10 @@ export class GeneralViewProvider implements WebviewViewProvider {
       let htmlContent = data
         .replace("${cssPath}", cssUri.toString())
         .replace("${rubrics}", rubricHtml);
-      
-      webviewView.webview.html = htmlContent;
 
+      webviewView.webview.html = htmlContent;
     } catch (error) {
-        console.error('Error resolving webview view:', error);
+      console.error("Error resolving webview view:", error);
     }
   }
 
@@ -77,11 +78,18 @@ export class GeneralViewProvider implements WebviewViewProvider {
       let score = undefined;
 
       if (savedComments.length > 0) {
-        let savedComment = savedComments.find((generalComment: { id: number; comment: string; rubricId: number; score?: number }) => generalComment.rubricId === rubricId);
+        let savedComment = savedComments.find(
+          (generalComment: {
+            id: number;
+            comment: string;
+            rubricId: number;
+            score?: number;
+          }) => generalComment.rubricId === rubricId
+        );
         commentText = savedComment.comment;
         score = savedComment.score;
       }
-      
+
       content += `<div class="rubric" data-rubric-id="${rubricId}">
       <h4 id="rubricTitle">
         <svg
