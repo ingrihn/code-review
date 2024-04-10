@@ -4,12 +4,12 @@ import {
   GENERAL_COMMENTS_FILE,
   INLINE_COMMENTS_FILE,
   activeEditor,
+  deactivate,
   treeDataProvider,
 } from "../extension";
+import { GeneralComment, InlineComment } from "../comment";
 import { Selection, Uri, window, workspace } from "vscode";
 
-import { GeneralComment } from "../general-comment";
-import { InlineComment } from "../comment";
 import path from "path";
 
 /**
@@ -34,7 +34,7 @@ export async function readFromFile(filePath: string): Promise<any> {
  * @param {string} title - The title of the comment.
  * @param {string} commentText - The text of the comment.
  */
-export async function addComment(
+export async function saveComment(
   fileName: string,
   selection: Selection,
   title: string,
@@ -75,10 +75,95 @@ export async function addComment(
 }
 
 /**
+ * Updates a comment with new content and title.
+ * @param {number} id - ID of the comment to be updated.
+ * @param {string} comment - New comment text.
+ * @param {string} title - New title for the comment.
+ */
+export async function updateComment(
+  id: number,
+  comment: string,
+  title: string
+) {
+  const jsonFilePath = getFilePath(INLINE_COMMENTS_FILE);
+
+  try {
+    const fileData = await readFromFile(jsonFilePath);
+    const existingComments = fileData.inlineComments;
+    const commentIndex = existingComments.findIndex(
+      (comment: InlineComment) => comment.id === id
+    );
+
+    if (commentIndex !== -1) {
+      const existingComment = existingComments[commentIndex];
+
+      // Only update if comment or title has changed
+      if (
+        existingComment.comment !== comment ||
+        existingComment.title !== title
+      ) {
+        existingComment.comment = comment;
+        existingComment.title = title;
+        const updatedData = { inlineComments: existingComments };
+        fs.promises.writeFile(jsonFilePath, JSON.stringify(updatedData));
+        treeDataProvider.refresh();
+        window.showInformationMessage("Comment successfully updated.");
+      }
+    }
+  } catch (error) {
+    window.showErrorMessage(`Error updating: ${error}`);
+    return;
+  }
+}
+
+/**
+ * Deletes a comment by its ID.
+ * @param {number} id - ID of the comment to be deleted.
+ */
+export function deleteComment(id: number) {
+  const jsonFilePath = getFilePath(INLINE_COMMENTS_FILE);
+
+  if (!jsonFilePath) {
+    window.showErrorMessage("File not found");
+    return;
+  }
+
+  try {
+    window
+      .showWarningMessage(
+        "Are you sure you want to delete this comment? This cannot be undone.",
+        ...["Yes", "No"]
+      )
+      .then(async (answer) => {
+        if (answer === "Yes") {
+          const fileData = await readFromFile(jsonFilePath);
+          const existingComments = fileData.inlineComments;
+          const commentIndex = existingComments.findIndex(
+            (comment: InlineComment) => comment.id === id
+          );
+
+          if (commentIndex !== -1) {
+            existingComments.splice(commentIndex, 1);
+            const updatedData = { inlineComments: existingComments };
+            fs.promises.writeFile(jsonFilePath, JSON.stringify(updatedData));
+            treeDataProvider.refresh();
+          }
+
+          deactivate();
+          window.showInformationMessage("Comment successfully deleted.");
+        }
+      });
+  } catch (error) {
+    window.showErrorMessage(`Error deleting from file: ${error}`);
+    return;
+  }
+}
+
+/**
  * Saves a new draft of general comments in a JSON file
  * @param {{ comment: string; score: number; rubricId: number }[]} generalComments The comments to save.
  */
-export async function addGeneralComments(
+export async function saveGeneralComments(
   generalComments: { comment: string; score: number; rubricId: number }[]
 ) {
   const jsonFilePath = getFilePath(GENERAL_COMMENTS_FILE);

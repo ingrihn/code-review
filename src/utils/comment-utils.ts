@@ -12,49 +12,9 @@ import {
   treeDataProvider,
 } from "../extension";
 import { Position, Range, window } from "vscode";
-import {
-  addComment,
-  addGeneralComments,
-  getFilePath,
-  getRelativePath,
-  readFromFile,
-} from "./file-utils";
+import { getFilePath, getRelativePath, readFromFile } from "./file-utils";
 
 import { InlineComment } from "../comment";
-
-/**
- * Handles messages received from the webview panel or webview view.
- * @param {any} message - The message received from the webview.
- */
-export function handleMessageFromWebview(message: any) {
-  switch (message.command) {
-    case "addComment":
-      const commentText = message.data.text;
-      const fileName = getRelativePath();
-      const title = message.data.title;
-      addComment(fileName, activeEditor.selection, title, commentText);
-      deactivate();
-      break;
-    case "deleteComment":
-      const { id: commentId } = message;
-      deleteComment(commentId);
-      break;
-    case "updateComment":
-      const newCommentId = message.data.id;
-      const newTitle = message.data.title;
-      const newCommentText = message.data.text;
-      updateComment(newCommentId, newCommentText, newTitle);
-      deactivate();
-      break;
-    case "draftStored":
-      const commentsData = message.data;
-      addGeneralComments(commentsData);
-      break;
-    default:
-      deactivate();
-      break; // Handle unknown command
-  }
-}
 
 /**
  * Get comments for a specific file.
@@ -139,89 +99,4 @@ export async function getComment(
     comment = allComments.find((c: InlineComment) => c.id === commentId);
   }
   return comment;
-}
-
-/**
- * Updates a comment with new content and title.
- * @param {number} id - ID of the comment to be updated.
- * @param {string} comment - New comment text.
- * @param {string} title - New title for the comment.
- */
-export async function updateComment(
-  id: number,
-  comment: string,
-  title: string
-) {
-  const jsonFilePath = getFilePath(INLINE_COMMENTS_FILE);
-
-  try {
-    const fileData = await readFromFile(jsonFilePath);
-    const existingComments = fileData.inlineComments;
-    const commentIndex = existingComments.findIndex(
-      (comment: InlineComment) => comment.id === id
-    );
-
-    if (commentIndex !== -1) {
-      const existingComment = existingComments[commentIndex];
-
-      // Only update if comment or title has changed
-      if (
-        existingComment.comment !== comment ||
-        existingComment.title !== title
-      ) {
-        existingComment.comment = comment;
-        existingComment.title = title;
-        const updatedData = { inlineComments: existingComments };
-        fs.promises.writeFile(jsonFilePath, JSON.stringify(updatedData));
-        treeDataProvider.refresh();
-        window.showInformationMessage("Comment successfully updated.");
-      }
-    }
-  } catch (error) {
-    window.showErrorMessage(`Error updating: ${error}`);
-    return;
-  }
-}
-
-/**
- * Deletes a comment by its ID.
- * @param {number} id - ID of the comment to be deleted.
- */
-export function deleteComment(id: number) {
-  const jsonFilePath = getFilePath(INLINE_COMMENTS_FILE);
-
-  if (!jsonFilePath) {
-    window.showErrorMessage("File not found");
-    return;
-  }
-
-  try {
-    window
-      .showWarningMessage(
-        "Are you sure you want to delete this comment? This cannot be undone.",
-        ...["Yes", "No"]
-      )
-      .then(async (answer) => {
-        if (answer === "Yes") {
-          const fileData = await readFromFile(jsonFilePath);
-          const existingComments = fileData.inlineComments;
-          const commentIndex = existingComments.findIndex(
-            (comment: InlineComment) => comment.id === id
-          );
-
-          if (commentIndex !== -1) {
-            existingComments.splice(commentIndex, 1);
-            const updatedData = { inlineComments: existingComments };
-            fs.promises.writeFile(jsonFilePath, JSON.stringify(updatedData));
-            treeDataProvider.refresh();
-          }
-
-          deactivate();
-          window.showInformationMessage("Comment successfully deleted.");
-        }
-      });
-  } catch (error) {
-    window.showErrorMessage(`Error deleting from file: ${error}`);
-    return;
-  }
 }
