@@ -1,7 +1,7 @@
 import * as fs from "fs";
 
 import {
-  COMMENTS_FILE,
+  INLINE_COMMENTS_FILE,
   activeEditor,
   deactivate,
   emptyDecoration,
@@ -20,7 +20,7 @@ import {
   readFromFile,
 } from "./file-utils";
 
-import { CommentType } from "../comment-type";
+import { InlineComment } from "../comment";
 
 /**
  * Handles messages received from the webview panel or webview view.
@@ -59,11 +59,11 @@ export function handleMessageFromWebview(message: any) {
 /**
  * Get comments for a specific file.
  * @param {string} filePath - Relative path of the file.
- * @returns {Promise<CommentType[]>} - An array of CommentType objects.
+ * @returns {Promise<InlineComment[]>} - An array of InlineComment objects.
  */
 export async function getFileComments(
   filePath: string
-): Promise<CommentType[]> {
+): Promise<InlineComment[]> {
   if (!activeEditor) {
     return [];
   }
@@ -71,9 +71,9 @@ export async function getFileComments(
   try {
     const fileName = getRelativePath();
     const fileData = await readFromFile(filePath);
-    const existingComments = fileData.comments;
+    const existingComments = fileData.inlineComments;
     return existingComments.filter(
-      (comment: CommentType) => comment.fileName === fileName
+      (comment: InlineComment) => comment.fileName === fileName
     );
   } catch (error) {
     console.error(`Error getting comments: ${error}`);
@@ -90,24 +90,21 @@ export async function showComments(filePath: string) {
 
   try {
     const fileComments = await getFileComments(filePath);
-    if (fileComments.length > 0) {
-      fileComments.forEach((comment: CommentType) => {
-        const { start, end } = comment;
-        const startPos = new Position(start.line - 1, start.character - 1);
-        const endPos = new Position(end.line - 1, end.character - 1);
-        const lineLength = activeEditor.document.lineAt(end.line - 1).text
-          .length;
-        const lineStartPosition = new Position(end.line - 1, 0);
-        const lineEndPosition = new Position(end.line - 1, lineLength);
-        iconDecoration.push({
-          range: new Range(lineStartPosition, lineEndPosition),
-        });
-        highlightDecoration.push({ range: new Range(startPos, endPos) });
+    fileComments.forEach((comment: InlineComment) => {
+      const { start, end } = comment;
+      const startPos = new Position(start.line - 1, start.character - 1);
+      const endPos = new Position(end.line - 1, end.character - 1);
+      const lineLength = activeEditor.document.lineAt(end.line - 1).text.length;
+      const lineStartPosition = new Position(end.line - 1, 0);
+      const lineEndPosition = new Position(end.line - 1, lineLength);
+      iconDecoration.push({
+        range: new Range(lineStartPosition, lineEndPosition),
       });
+      highlightDecoration.push({ range: new Range(startPos, endPos) });
+    });
 
-      activeEditor.setDecorations(icon, iconDecoration);
-      activeEditor.setDecorations(highlight, highlightDecoration);
-    }
+    activeEditor.setDecorations(icon, iconDecoration);
+    activeEditor.setDecorations(highlight, highlightDecoration);
   } catch (error) {
     console.error(`Error showing comments: ${error}`);
   }
@@ -116,21 +113,21 @@ export async function showComments(filePath: string) {
 /**
  * Gets a comment based on clicked range or ID
  * @param {Range | number} input - Range of clicked comment or ID of comment.
- @returns {Promise<CommentType | undefined>} - A promise that resolves to the retrieved comment or undefined if not found.
+ @returns {Promise<InlineComment | undefined>} - A promise that resolves to the retrieved comment or undefined if not found.
  */
 export async function getComment(
   input: Range | number
-): Promise<CommentType | undefined> {
-  const filePath = getFilePath(COMMENTS_FILE);
+): Promise<InlineComment | undefined> {
+  const filePath = getFilePath(INLINE_COMMENTS_FILE);
   const fileData = await readFromFile(filePath);
-  const allComments = fileData.comments;
-  let comment: CommentType | undefined;
+  const allComments = fileData.inlineComments;
+  let comment: InlineComment | undefined;
 
   // Finds comment in JSON based on the clicked range
   if (input instanceof Range) {
     const range = input;
     comment = allComments.find(
-      (c: CommentType) =>
+      (c: InlineComment) =>
         c.fileName === getRelativePath() &&
         c.start.line <= range.start.line + 1 &&
         c.end.line >= range.end.line + 1 &&
@@ -139,7 +136,7 @@ export async function getComment(
     );
   } else if (typeof input === "number") {
     const commentId = input;
-    comment = allComments.find((c: CommentType) => c.id === commentId);
+    comment = allComments.find((c: InlineComment) => c.id === commentId);
   }
   return comment;
 }
@@ -155,13 +152,13 @@ export async function updateComment(
   comment: string,
   title: string
 ) {
-  const jsonFilePath = getFilePath(COMMENTS_FILE);
+  const jsonFilePath = getFilePath(INLINE_COMMENTS_FILE);
 
   try {
     const fileData = await readFromFile(jsonFilePath);
-    const existingComments = fileData.comments;
+    const existingComments = fileData.inlineComments;
     const commentIndex = existingComments.findIndex(
-      (comment: CommentType) => comment.id === id
+      (comment: InlineComment) => comment.id === id
     );
 
     if (commentIndex !== -1) {
@@ -174,11 +171,10 @@ export async function updateComment(
       ) {
         existingComment.comment = comment;
         existingComment.title = title;
-        const updatedData = { comments: existingComments };
+        const updatedData = { inlineComments: existingComments };
         fs.promises.writeFile(jsonFilePath, JSON.stringify(updatedData));
         treeDataProvider.refresh();
         window.showInformationMessage("Comment successfully updated.");
-        // showMessageWithTimeout("Comment successfully updated.");
       }
     }
   } catch (error) {
@@ -192,7 +188,7 @@ export async function updateComment(
  * @param {number} id - ID of the comment to be deleted.
  */
 export function deleteComment(id: number) {
-  const jsonFilePath = getFilePath(COMMENTS_FILE);
+  const jsonFilePath = getFilePath(INLINE_COMMENTS_FILE);
 
   if (!jsonFilePath) {
     window.showErrorMessage("File not found");
@@ -207,21 +203,21 @@ export function deleteComment(id: number) {
       )
       .then(async (answer) => {
         if (answer === "Yes") {
+          const fileData = await readFromFile(jsonFilePath);
+          const existingComments = fileData.inlineComments;
+          const commentIndex = existingComments.findIndex(
+            (comment: InlineComment) => comment.id === id
+          );
+
+          if (commentIndex !== -1) {
+            existingComments.splice(commentIndex, 1);
+            const updatedData = { inlineComments: existingComments };
+            fs.promises.writeFile(jsonFilePath, JSON.stringify(updatedData));
+            treeDataProvider.refresh();
+          }
+
           deactivate();
           window.showInformationMessage("Comment successfully deleted.");
-        }
-
-        const fileData = await readFromFile(jsonFilePath);
-        const existingComments = fileData.comments;
-        const commentIndex = existingComments.findIndex(
-          (comment: CommentType) => comment.id === id
-        );
-
-        if (commentIndex !== -1) {
-          existingComments.splice(commentIndex, 1);
-          const updatedData = { comments: existingComments };
-          fs.promises.writeFile(jsonFilePath, JSON.stringify(updatedData));
-          treeDataProvider.refresh();
         }
       });
   } catch (error) {

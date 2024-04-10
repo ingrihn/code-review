@@ -21,8 +21,8 @@ import {
   showComments,
 } from "./utils/comment-utils";
 
-import { CommentType } from "./comment-type";
 import { GeneralViewProvider } from "./general-view-provider";
+import { InlineComment } from "./comment";
 import { InlineCommentProvider } from "./inline-comment-provider";
 import path from "path";
 
@@ -32,7 +32,7 @@ export let iconDecoration: DecorationOptions[] = [];
 export let highlightDecoration: DecorationOptions[] = [];
 export let icon: TextEditorDecorationType;
 export let highlight: TextEditorDecorationType;
-export const COMMENTS_FILE = "comments.json";
+export const INLINE_COMMENTS_FILE = "inline-comments.json";
 export const GENERAL_COMMENTS_FILE = "general-comments.json";
 let generalViewProvider: GeneralViewProvider;
 let panel: WebviewPanel;
@@ -44,7 +44,9 @@ export async function activate(context: ExtensionContext) {
   activeEditor = window.activeTextEditor ?? window.visibleTextEditors[0];
   icon = window.createTextEditorDecorationType({
     after: {
-      contentIconPath: context.asAbsolutePath(path.join("src", "comment.svg")),
+      contentIconPath: context.asAbsolutePath(
+        path.join("src", "assets", "comment.svg")
+      ),
       margin: "5px",
     },
   });
@@ -53,10 +55,10 @@ export async function activate(context: ExtensionContext) {
   });
 
   // Makes JSON files if they don't already exist
-  const commentsJson = getFilePath(COMMENTS_FILE);
+  const commentsJson = getFilePath(INLINE_COMMENTS_FILE);
   const generalCommentsJson = getFilePath(GENERAL_COMMENTS_FILE);
   const rubricsJson = getFilePath("rubrics.json");
-  if (checkIfFileExists(commentsJson, "comments")) {
+  if (checkIfFileExists(commentsJson, "inlineComments")) {
     showComments(commentsJson);
   }
   checkIfFileExists(generalCommentsJson, "generalComments");
@@ -100,7 +102,7 @@ export async function activate(context: ExtensionContext) {
   context.subscriptions.push(
     commands.registerCommand(
       "extension.showCommentSidebar",
-      (comment?: CommentType) => {
+      (comment?: InlineComment) => {
         if (panel) {
           panel.dispose();
         }
@@ -119,7 +121,12 @@ export async function activate(context: ExtensionContext) {
           "src",
           "webview.html"
         );
-        const cssPath = Uri.joinPath(context.extensionUri, "src", "style.css");
+        const cssPath = Uri.joinPath(
+          context.extensionUri,
+          "src",
+          "styles",
+          "style.css"
+        );
         const cssUri = panel.webview.asWebviewUri(cssPath);
 
         fs.promises
@@ -188,7 +195,7 @@ export async function activate(context: ExtensionContext) {
           );
 
           if (isHighlightedClicked && highlightedRange) {
-            const comment: CommentType | undefined = await getComment(
+            const comment: InlineComment | undefined = await getComment(
               highlightedRange
             );
             if (comment) {

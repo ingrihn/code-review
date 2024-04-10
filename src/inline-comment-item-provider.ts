@@ -24,7 +24,7 @@ import { InlineComment } from "./comment";
 import { InlineCommentItem } from "./inline-comment-item";
 import { getComment } from "./utils/comment-utils";
 
-export class InlineCommentProvider
+export class InlineCommentItemProvider
   implements TreeDataProvider<InlineCommentItem>
 {
   private _onDidChangeTreeData: EventEmitter<

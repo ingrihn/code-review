@@ -19,7 +19,7 @@ Inline comments are helpuful for directly linking your comment with the relevant
 3. A webview panel will appear to the right. Insert a title and a comment.
 4. Click on _Add_ when you are satisfied.
 
-The corresponding code line(s) will receive a teal background and feature a small comment icon at the end. All comments are stored in `comments.json`and adhere to the format in `comment-type.ts`:
+The corresponding code line(s) will receive a teal background and feature a small comment icon at the end. All inline comments are stored in `inline-comments.json`and adhere to the format in `comment-type.ts`:
 
 ```
 export interface InlineCommentType {

@@ -1,15 +1,15 @@
 import * as fs from "fs";
 
 import {
-  COMMENTS_FILE,
   GENERAL_COMMENTS_FILE,
+  INLINE_COMMENTS_FILE,
   activeEditor,
   treeDataProvider,
 } from "../extension";
 import { Selection, Uri, window, workspace } from "vscode";
 
-import { CommentType } from "../comment-type";
 import { GeneralComment } from "../general-comment";
+import { InlineComment } from "../comment";
 import path from "path";
 
 /**
@@ -40,10 +40,10 @@ export async function addComment(
   title: string,
   commentText: string
 ) {
-  const jsonFilePath = getFilePath(COMMENTS_FILE);
+  const jsonFilePath = getFilePath(INLINE_COMMENTS_FILE);
 
   try {
-    const commentData: CommentType = {
+    const commentData: InlineComment = {
       id: Date.now(),
       fileName: fileName,
       start: {
@@ -59,10 +59,10 @@ export async function addComment(
     };
 
     const fileData = await readFromFile(jsonFilePath);
-    const existingComments = fileData.comments;
+    const existingComments = fileData.inlineComments;
     existingComments.push(commentData);
 
-    const updatedData = { comments: existingComments };
+    const updatedData = { inlineComments: existingComments };
     const commentsJson = JSON.stringify(updatedData);
 
     await fs.promises.writeFile(jsonFilePath, commentsJson);

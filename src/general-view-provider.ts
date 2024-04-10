@@ -9,6 +9,8 @@ import {
 } from "vscode";
 import { getFilePath, readFromFile } from "./utils/file-utils";
 
+import { GENERAL_COMMENTS_FILE } from "./extension";
+
 export class GeneralViewProvider implements WebviewViewProvider {
   public static readonly viewType = "collabrate-general";
   private _view?: WebviewView;
@@ -34,7 +36,7 @@ export class GeneralViewProvider implements WebviewViewProvider {
     };
 
     const cssUri = webviewView.webview.asWebviewUri(
-      Uri.joinPath(this._extensionUri, "src", "style.css")
+      Uri.joinPath(this._extensionUri, "src", "styles", "style.css")
     );
     const htmlFilePath = Uri.joinPath(
       this._extensionUri,
@@ -68,7 +70,7 @@ export class GeneralViewProvider implements WebviewViewProvider {
    */
   private async loadHtml(rubrics: any): Promise<string> {
     let content = "";
-    const fileData = await readFromFile(getFilePath("general-comments.json"));
+    const fileData = await readFromFile(getFilePath(GENERAL_COMMENTS_FILE));
     const savedComments = fileData.generalComments;
     rubrics.rubrics = Array.from(rubrics.rubrics);
 
