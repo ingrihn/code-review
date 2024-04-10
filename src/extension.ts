@@ -14,20 +14,24 @@ import {
   commands,
   window,
 } from "vscode";
-import { checkIfFileExists, getFilePath } from "./utils/file-utils";
 import {
-  getComment,
-  handleMessageFromWebview,
-  showComments,
-} from "./utils/comment-utils";
+  checkIfFileExists,
+  deleteComment,
+  getFilePath,
+  getRelativePath,
+  saveComment,
+  saveGeneralComments,
+  updateComment,
+} from "./utils/file-utils";
+import { getComment, showComments } from "./utils/comment-utils";
 
 import { GeneralViewProvider } from "./general-view-provider";
 import { InlineComment } from "./comment";
-import { InlineCommentProvider } from "./inline-comment-provider";
+import { InlineCommentItemProvider } from "./inline-comment-item-provider";
 import path from "path";
 
 export let activeEditor: TextEditor;
-export let treeDataProvider: InlineCommentProvider;
+export let treeDataProvider: InlineCommentItemProvider;
 export let iconDecoration: DecorationOptions[] = [];
 export let highlightDecoration: DecorationOptions[] = [];
 export let icon: TextEditorDecorationType;
@@ -39,7 +43,7 @@ let panel: WebviewPanel;
 const viewId = "collabrate-inline";
 
 export async function activate(context: ExtensionContext) {
-  treeDataProvider = new InlineCommentProvider();
+  treeDataProvider = new InlineCommentItemProvider();
   generalViewProvider = new GeneralViewProvider(context.extensionUri);
   activeEditor = window.activeTextEditor ?? window.visibleTextEditors[0];
   icon = window.createTextEditorDecorationType({
@@ -206,6 +210,40 @@ export async function activate(context: ExtensionContext) {
       }
     )
   );
+}
+
+/**
+ * Handles messages received from the webview panel or webview view.
+ * @param {any} message - The message received from the webview.
+ */
+export function handleMessageFromWebview(message: any) {
+  switch (message.command) {
+    case "saveComment":
+      const commentText = message.data.text;
+      const fileName = getRelativePath();
+      const title = message.data.title;
+      saveComment(fileName, activeEditor.selection, title, commentText);
+      deactivate();
+      break;
+    case "deleteComment":
+      const { id: commentId } = message;
+      deleteComment(commentId);
+      break;
+    case "updateComment":
+      const newCommentId = message.data.id;
+      const newTitle = message.data.title;
+      const newCommentText = message.data.text;
+      updateComment(newCommentId, newCommentText, newTitle);
+      deactivate();
+      break;
+    case "draftStored":
+      const commentsData = message.data;
+      saveGeneralComments(commentsData);
+      break;
+    default:
+      deactivate();
+      break; // Handle unknown command
+  }
 }
 
 export function emptyDecoration() {

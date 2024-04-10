@@ -30,7 +30,7 @@
           id="addBtn"
           type="button"
           class="btn btn-primary btn-lg"
-          onclick="addComment()"
+          onclick="saveComment()"
         >
           Save
         </button>
@@ -77,14 +77,14 @@
         addBtn.style.display = "none";
       }
 
-      function addComment() {
+      function saveComment() {
         const title = document.getElementById("title").value;
         const commentText = document.getElementById("textBox").value;
         const comment = {
           title: title,
           text: commentText,
         };
-        vscode.postMessage({ command: "addComment", data: comment });
+        vscode.postMessage({ command: "saveComment", data: comment });
       }
 
       function deleteComment() {
