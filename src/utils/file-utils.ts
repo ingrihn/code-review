@@ -43,31 +43,38 @@ export async function saveComment(
   const jsonFilePath = getFilePath(INLINE_COMMENTS_FILE);
 
   try {
-    const commentData: InlineComment = {
-      id: Date.now(),
-      fileName: fileName,
-      start: {
-        line: selection.start.line + 1,
-        character: selection.start.character + 1,
-      },
-      end: {
-        line: selection.end.line + 1,
-        character: selection.end.character + 1,
-      },
-      title: title,
-      comment: commentText,
-    };
+    if (title.trim() || commentText.trim()) {
+      const commentData: InlineComment = {
+        id: Date.now(),
+        fileName: fileName,
+        start: {
+          line: selection.start.line + 1,
+          character: selection.start.character + 1,
+        },
+        end: {
+          line: selection.end.line + 1,
+          character: selection.end.character + 1,
+        },
+        title: title,
+        comment: commentText,
+      };
 
-    const fileData = await readFromFile(jsonFilePath);
-    const existingComments = fileData.inlineComments;
-    existingComments.push(commentData);
+      const fileData = await readFromFile(jsonFilePath);
+      const existingComments = fileData.inlineComments;
+      existingComments.push(commentData);
 
-    const updatedData = { inlineComments: existingComments };
-    const commentsJson = JSON.stringify(updatedData);
+      const updatedData = { inlineComments: existingComments };
+      const commentsJson = JSON.stringify(updatedData);
 
-    await fs.promises.writeFile(jsonFilePath, commentsJson);
-    window.showInformationMessage("Comment successfully added.");
-    treeDataProvider.refresh();
+      await fs.promises.writeFile(jsonFilePath, commentsJson);
+      window.showInformationMessage("Comment successfully added.");
+      treeDataProvider.refresh();
+      deactivate();
+    } else {
+      window.showInformationMessage(
+        "Please enter either a title or a comment."
+      );
+    }
   } catch (error: any) {
     window.showErrorMessage(`Error saving to file: ${error.message}`);
     return;
@@ -97,17 +104,23 @@ export async function updateComment(
     if (commentIndex !== -1) {
       const existingComment = existingComments[commentIndex];
 
-      // Only update if comment or title has changed
+      // Only update if comment or title has changed. and both title and comment cannot be empty
       if (
-        existingComment.comment !== comment ||
-        existingComment.title !== title
+        comment.trim() &&
+        title.trim() &&
+        (existingComment.comment !== comment || existingComment.title !== title)
       ) {
         existingComment.comment = comment;
         existingComment.title = title;
         const updatedData = { inlineComments: existingComments };
         fs.promises.writeFile(jsonFilePath, JSON.stringify(updatedData));
         treeDataProvider.refresh();
+        deactivate();
         window.showInformationMessage("Comment successfully updated.");
+      } else {
+        window.showInformationMessage(
+          "Either no changes detected, or missing title or comment."
+        );
       }
     }
   } catch (error) {
