@@ -223,7 +223,6 @@ export function handleMessageFromWebview(message: any) {
       const fileName = getRelativePath();
       const title = message.data.title;
       saveComment(fileName, activeEditor.selection, title, commentText);
-      deactivate();
       break;
     case "deleteComment":
       const { id: commentId } = message;
@@ -234,7 +233,6 @@ export function handleMessageFromWebview(message: any) {
       const newTitle = message.data.title;
       const newCommentText = message.data.text;
       updateComment(newCommentId, newCommentText, newTitle);
-      deactivate();
       break;
     case "draftStored":
       const commentsData = message.data;
