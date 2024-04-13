@@ -63,8 +63,8 @@
       const vscode = acquireVsCodeApi();
 
       // Autofocus on the text area
-      const textArea = document.getElementById("textBox");
-      textArea.focus();
+      const title = document.getElementById("title");
+      title.focus();
 
       // Hide delete and update button if adding a new comment
       const commentId =
@@ -78,10 +78,10 @@
       }
 
       function saveComment() {
-        const title = document.getElementById("title").value;
+        const titleText = document.getElementById("title").value;
         const commentText = document.getElementById("textBox").value;
         const comment = {
-          title: title,
+          title: titleText,
           text: commentText,
         };
         vscode.postMessage({ command: "saveComment", data: comment });

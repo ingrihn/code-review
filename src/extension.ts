@@ -15,20 +15,15 @@ import {
   window,
 } from "vscode";
 import {
-  checkIfFileExists,
-  deleteComment,
-  getFilePath,
-  getRelativePath,
-  saveComment,
-  saveGeneralComments,
-  updateComment,
-} from "./utils/file-utils";
-import { getComment, showComments } from "./utils/comment-utils";
+  getComment,
+  showComments,
+} from "./utils/comment-utils";
 
 import { GeneralViewProvider } from "./general-view-provider";
 import { InlineComment } from "./comment";
 import { InlineCommentItemProvider } from "./inline-comment-item-provider";
 import path from "path";
+import { checkIfFileExists, deleteComment, getFilePath, getRelativePath, saveComment, saveGeneralComments, updateComment } from "./utils/file-utils";
 
 export let activeEditor: TextEditor;
 export let treeDataProvider: InlineCommentItemProvider;
@@ -110,7 +105,6 @@ export async function activate(context: ExtensionContext) {
         if (panel) {
           panel.dispose();
         }
-
         panel = window.createWebviewPanel(
           "commentSidebar",
           "Inline Comment",
@@ -119,7 +113,7 @@ export async function activate(context: ExtensionContext) {
             enableScripts: true,
           }
         );
-
+        
         const webviewPath = Uri.joinPath(
           context.extensionUri,
           "src",
@@ -238,6 +232,8 @@ export function handleMessageFromWebview(message: any) {
       const commentsData = message.data;
       saveGeneralComments(commentsData);
       break;
+    case "submitReview":
+      window.showInformationMessage("Review successfully submitted.");
     default:
       deactivate();
       break; // Handle unknown command

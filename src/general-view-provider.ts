@@ -72,8 +72,9 @@ export class GeneralViewProvider implements WebviewViewProvider {
     let content = "";
     const fileData = await readFromFile(getFilePath(GENERAL_COMMENTS_FILE));
     const savedComments = fileData.generalComments;
-    rubrics.rubrics = Array.from(rubrics.rubrics);
 
+    rubrics.rubrics = Array.from(rubrics.rubrics);
+    
     rubrics.rubrics.forEach((rubric: any) => {
       let rubricId = Number(rubric.id);
       let commentText = "";
@@ -88,8 +89,11 @@ export class GeneralViewProvider implements WebviewViewProvider {
             score?: number;
           }) => generalComment.rubricId === rubricId
         );
-        commentText = savedComment.comment;
-        score = savedComment.score;
+
+        if (savedComment !== undefined) {
+          commentText = savedComment.comment;
+          score = savedComment.score;
+        }
       }
 
       content += `<div class="rubric" data-rubric-id="${rubricId}">

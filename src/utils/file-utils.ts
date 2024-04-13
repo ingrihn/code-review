@@ -185,7 +185,7 @@ export async function saveGeneralComments(
     const newDraft: GeneralComment[] = [];
 
     generalComments.forEach((generalComment: any) => {
-      if (generalComment.comment !== "" || generalComment.score !== -1) {
+      if (generalComment.comment !== "" || generalComment.score !== undefined) {
         const generalCommentData: GeneralComment = {
           id: Date.now(),
           comment: generalComment.comment,
@@ -196,10 +196,14 @@ export async function saveGeneralComments(
       }
     });
 
-    const updatedData = { generalComments: newDraft };
-    const generalCommentsJson = JSON.stringify(updatedData);
-    await fs.promises.writeFile(jsonFilePath, generalCommentsJson);
-    window.showInformationMessage("Draft saved successfully.");
+    if (newDraft.length > 0) {
+      const updatedData = { generalComments: newDraft };
+      const generalCommentsJson = JSON.stringify(updatedData);
+      await fs.promises.writeFile(jsonFilePath, generalCommentsJson);
+      window.showInformationMessage("Draft successfully saved.");
+    } else {
+      window.showInformationMessage("Cannot save empty draft.");
+    }
   } catch (error: any) {
     window.showErrorMessage(`Error saving to file: ${error.message}`);
     return;
