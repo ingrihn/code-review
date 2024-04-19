@@ -15,15 +15,20 @@ import {
   window,
 } from "vscode";
 import {
-  getComment,
-  showComments,
-} from "./utils/comment-utils";
+  checkIfFileExists,
+  deleteComment,
+  getFilePath,
+  getRelativePath,
+  saveComment,
+  saveGeneralComments,
+  updateComment,
+} from "./utils/file-utils";
+import { getComment, showComments } from "./utils/comment-utils";
 
 import { GeneralViewProvider } from "./general-view-provider";
 import { InlineComment } from "./comment";
 import { InlineCommentItemProvider } from "./inline-comment-item-provider";
 import path from "path";
-import { checkIfFileExists, deleteComment, getFilePath, getRelativePath, saveComment, saveGeneralComments, updateComment } from "./utils/file-utils";
 
 export let activeEditor: TextEditor;
 export let treeDataProvider: InlineCommentItemProvider;
@@ -113,11 +118,11 @@ export async function activate(context: ExtensionContext) {
             enableScripts: true,
           }
         );
-        
+
         const webviewPath = Uri.joinPath(
           context.extensionUri,
           "src",
-          "webview.html"
+          "inline-comment.html"
         );
         const cssPath = Uri.joinPath(
           context.extensionUri,
@@ -131,9 +136,10 @@ export async function activate(context: ExtensionContext) {
           .readFile(webviewPath.fsPath, "utf-8")
           .then((data) => {
             // Get values from clicked comment
-            let commentText = comment && comment.comment ? comment.comment : "";
-            let title = comment && comment.title ? comment.title : "";
-            let commentId = comment && comment.id ? comment.id : "";
+            const commentText = comment?.comment || "";
+            const title = comment?.title || "";
+            const commentId = comment?.id || "";
+            const priority = comment?.priority || "";
 
             // Shows the comment's value in the webview HTML
             let htmlContent = data
@@ -141,6 +147,13 @@ export async function activate(context: ExtensionContext) {
               .replace("${commentText}", commentText)
               .replace("${commentId}", commentId.toString())
               .replace("${commentTitle}", title);
+
+            if (priority) {
+              htmlContent = htmlContent.replace(
+                `value="${priority}"`,
+                `value="${priority}" checked`
+              );
+            }
 
             panel.webview.html = htmlContent;
           })
@@ -181,20 +194,13 @@ export async function activate(context: ExtensionContext) {
           selection.start.line === selection.end.line
         ) {
           const clickedPosition: Position = activeEditor.selection.active;
-          let highlightedRange: Range | undefined;
-          const isHighlightedClicked = highlightDecoration.some(
-            (decoration) => {
-              if (decoration.range.contains(clickedPosition)) {
-                highlightedRange = decoration.range;
-                return true; // Stop once a match is found
-              }
-              return false;
-            }
+          const clickedHighlight = highlightDecoration.find((decoration) =>
+            decoration.range.contains(clickedPosition)
           );
 
-          if (isHighlightedClicked && highlightedRange) {
+          if (clickedHighlight) {
             const comment: InlineComment | undefined = await getComment(
-              highlightedRange
+              clickedHighlight.range
             );
             if (comment) {
               commands.executeCommand("extension.showCommentSidebar", comment);
@@ -216,7 +222,14 @@ export function handleMessageFromWebview(message: any) {
       const commentText = message.data.text;
       const fileName = getRelativePath();
       const title = message.data.title;
-      saveComment(fileName, activeEditor.selection, title, commentText);
+      const priority = message.data.priority;
+      saveComment(
+        fileName,
+        activeEditor.selection,
+        title,
+        commentText,
+        priority
+      );
       break;
     case "deleteComment":
       const { id: commentId } = message;
@@ -226,7 +239,8 @@ export function handleMessageFromWebview(message: any) {
       const newCommentId = message.data.id;
       const newTitle = message.data.title;
       const newCommentText = message.data.text;
-      updateComment(newCommentId, newCommentText, newTitle);
+      const newPriority = message.data.priority;
+      updateComment(newCommentId, newCommentText, newTitle, newPriority);
       break;
     case "draftStored":
       const commentsData = message.data;
