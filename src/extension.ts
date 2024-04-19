@@ -16,17 +16,26 @@ import {
   window,
 } from "vscode";
 import {
+  checkIfFileExists,
+  deleteComment,
+  getFilePath,
+  getRelativePath,
+  saveComment,
+  saveDraft,
+  submitReview,
+  updateComment,
+} from "./utils/file-utils";
+import {
   convertFromGeneralComment,
   getComment,
   getGeneralComments,
-  showComments
+  showComments,
 } from "./utils/comment-utils";
 
 import { GeneralViewProvider } from "./general-view-provider";
 import { InlineComment } from "./comment";
 import { InlineCommentItemProvider } from "./inline-comment-item-provider";
 import path from "path";
-import { checkIfFileExists, deleteComment, getFilePath, getRelativePath, saveComment, saveDraft, submitReview, updateComment } from "./utils/file-utils";
 
 export let activeEditor: TextEditor;
 export let treeDataProvider: InlineCommentItemProvider;
@@ -75,7 +84,7 @@ export async function activate(context: ExtensionContext) {
           _context,
           _token
         );
-        
+
         context.subscriptions.push(
           webviewView.onDidChangeVisibility(async (e) => {
             try {
@@ -84,7 +93,6 @@ export async function activate(context: ExtensionContext) {
                 _context,
                 _token
               );
-              
             } catch (error) {
               console.error("Error fetching rubrics JSON:", error);
             }
@@ -100,20 +108,21 @@ export async function activate(context: ExtensionContext) {
   );
 
   // Create tree view in the panel
-  const treeView = window.createTreeView(viewId, { treeDataProvider, showCollapseAll: true, canSelectMany: false });
+  const treeView = window.createTreeView(viewId, {
+    treeDataProvider,
+    showCollapseAll: true,
+    canSelectMany: false,
+  });
 
   // Register command to show the tree view when executed
   context.subscriptions.push(
-    commands.registerCommand(
-      "extension.showOverview",
-      () => {
-        treeDataProvider.getFirstElement().then((firstElement) => {
-          if (firstElement) {
-            treeView.reveal(firstElement, { select: false, focus: false });
-          }
-        });
-      }
-    )
+    commands.registerCommand("extension.showOverview", () => {
+      treeDataProvider.getFirstElement().then((firstElement) => {
+        if (firstElement) {
+          treeView.reveal(firstElement, { select: false, focus: false });
+        }
+      });
+    })
   );
 
   commands.executeCommand("extension.showOverview");
@@ -134,11 +143,11 @@ export async function activate(context: ExtensionContext) {
             enableScripts: true,
           }
         );
-        
+
         const webviewPath = Uri.joinPath(
           context.extensionUri,
           "src",
-          "webview.html"
+          "inline-comment.html"
         );
         const cssPath = Uri.joinPath(
           context.extensionUri,
@@ -152,9 +161,10 @@ export async function activate(context: ExtensionContext) {
           .readFile(webviewPath.fsPath, "utf-8")
           .then((data) => {
             // Get values from clicked comment
-            let commentText = comment && comment.comment ? comment.comment : "";
-            let title = comment && comment.title ? comment.title : "";
-            let commentId = comment && comment.id ? comment.id : "";
+            const commentText = comment?.comment || "";
+            const title = comment?.title || "";
+            const commentId = comment?.id || "";
+            const priority = comment?.priority || "";
 
             // Shows the comment's value in the webview HTML
             let htmlContent = data
@@ -162,6 +172,13 @@ export async function activate(context: ExtensionContext) {
               .replace("${commentText}", commentText)
               .replace("${commentId}", commentId.toString())
               .replace("${commentTitle}", title);
+
+            if (priority) {
+              htmlContent = htmlContent.replace(
+                `value="${priority}"`,
+                `value="${priority}" checked`
+              );
+            }
 
             panel.webview.html = htmlContent;
           })
@@ -202,20 +219,13 @@ export async function activate(context: ExtensionContext) {
           selection.start.line === selection.end.line
         ) {
           const clickedPosition: Position = activeEditor.selection.active;
-          let highlightedRange: Range | undefined;
-          const isHighlightedClicked = highlightDecoration.some(
-            (decoration) => {
-              if (decoration.range.contains(clickedPosition)) {
-                highlightedRange = decoration.range;
-                return true; // Stop once a match is found
-              }
-              return false;
-            }
+          const clickedHighlight = highlightDecoration.find((decoration) =>
+            decoration.range.contains(clickedPosition)
           );
 
-          if (isHighlightedClicked && highlightedRange) {
+          if (clickedHighlight) {
             const comment: InlineComment | undefined = await getComment(
-              highlightedRange
+              clickedHighlight.range
             );
             if (comment) {
               commands.executeCommand("extension.showCommentSidebar", comment);
@@ -227,17 +237,26 @@ export async function activate(context: ExtensionContext) {
   );
 
   // Register command for submitting all comments
-  context.subscriptions.push(commands.registerCommand("extension.submitReview", async () => 
-    {
-      if (generalViewProvider.getView() !== undefined && generalViewProvider.getView()?.visible) {
-        generalViewProvider.getView()!.webview.postMessage("getGeneralCommentsSubmit");
+  context.subscriptions.push(
+    commands.registerCommand("extension.submitReview", async () => {
+      if (
+        generalViewProvider.getView() !== undefined &&
+        generalViewProvider.getView()?.visible
+      ) {
+        generalViewProvider
+          .getView()!
+          .webview.postMessage("getGeneralCommentsSubmit");
       } else {
         const generalComments = await getGeneralComments();
-        const commentsToSave: { comment: string; score?: number; rubricId: number }[] = convertFromGeneralComment(generalComments);
+        const commentsToSave: {
+          comment: string;
+          score?: number;
+          rubricId: number;
+        }[] = convertFromGeneralComment(generalComments);
         submitReview(commentsToSave);
       }
-    }
-  ));
+    })
+  );
 
   // Add submit button to status bar
   const submitItem = window.createStatusBarItem(StatusBarAlignment.Left);
@@ -258,7 +277,14 @@ export function handleMessageFromWebview(message: any) {
       const commentText = message.data.text;
       const fileName = getRelativePath();
       const title = message.data.title;
-      saveComment(fileName, activeEditor.selection, title, commentText);
+      const priority = message.data.priority;
+      saveComment(
+        fileName,
+        activeEditor.selection,
+        title,
+        commentText,
+        priority
+      );
       break;
     case "deleteComment":
       const { id: commentId } = message;
@@ -268,7 +294,8 @@ export function handleMessageFromWebview(message: any) {
       const newCommentId = message.data.id;
       const newTitle = message.data.title;
       const newCommentText = message.data.text;
-      updateComment(newCommentId, newCommentText, newTitle);
+      const newPriority = message.data.priority;
+      updateComment(newCommentId, newCommentText, newTitle, newPriority);
       break;
     case "draftStored":
       const commentsData = message.data;

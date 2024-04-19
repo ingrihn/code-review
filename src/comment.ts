@@ -11,6 +11,7 @@ export interface InlineComment {
   };
   title: string;
   comment: string;
+  priority?: number;
 }
 
 export interface GeneralComment {

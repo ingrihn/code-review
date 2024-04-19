@@ -34,12 +34,14 @@ export async function readFromFile(filePath: string): Promise<any> {
  * @param {Selection} selection - The highlighted code lines.
  * @param {string} title - The title of the comment.
  * @param {string} commentText - The text of the comment.
+ * @param {number} priority - The priority of the comment.
  */
 export async function saveComment(
   fileName: string,
   selection: Selection,
   title: string,
-  commentText: string
+  commentText: string,
+  priority?: number
 ) {
   const jsonFilePath = getFilePath(INLINE_COMMENTS_FILE);
 
@@ -59,6 +61,11 @@ export async function saveComment(
         title: title,
         comment: commentText,
       };
+
+      // Only add priority if they have checked for it
+      if (priority !== undefined) {
+        commentData.priority = priority;
+      }
 
       const fileData = await readFromFile(jsonFilePath);
       const existingComments = fileData.inlineComments;
@@ -87,11 +94,13 @@ export async function saveComment(
  * @param {number} id - ID of the comment to be updated.
  * @param {string} comment - New comment text.
  * @param {string} title - New title for the comment.
+ * @param {number} priority - New priority for the comment.
  */
 export async function updateComment(
   id: number,
   comment: string,
-  title: string
+  title: string,
+  priority?: number
 ) {
   const jsonFilePath = getFilePath(INLINE_COMMENTS_FILE);
 
@@ -104,15 +113,16 @@ export async function updateComment(
 
     if (commentIndex !== -1) {
       const existingComment = existingComments[commentIndex];
-
-      // Only update if comment or title has changed. and both title and comment cannot be empty
+      // Only update if comment, title or priority has changed. Both title and comment cannot be empty
       if (
-        comment.trim() &&
-        title.trim() &&
-        (existingComment.comment !== comment || existingComment.title !== title)
+        (comment.trim() || title.trim()) &&
+        (existingComment.comment !== comment ||
+          existingComment.title !== title ||
+          existingComment.priority !== priority)
       ) {
         existingComment.comment = comment;
         existingComment.title = title;
+        existingComment.priority = priority;
         const updatedData = { inlineComments: existingComments };
         fs.promises.writeFile(jsonFilePath, JSON.stringify(updatedData));
         treeDataProvider.refresh();

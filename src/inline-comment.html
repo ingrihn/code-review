@@ -24,45 +24,64 @@
       />
       <textarea placeholder="Comment" id="textBox">${commentText}</textarea>
       <br />
-      <div id="btnGroup2">
-        <div>
-          <button
-            id="overviewBtn"
-            type="button"
-            class="btn btn-outline-primary btn-lg"
-            onclick="showOverview()"
-          >
-            Show all inline comments
-          </button>
+      <div class="flex-container">
+        <div class="radio-button-group">
+          <label class="container">
+            Low<input
+              class="radio-button"
+              type="radio"
+              name="priority-radio-buttons"
+              value="1"
+            />
+            <span class="checkmark"></span>
+          </label>
+          <label class="container">
+            Medium<input
+              class="radio-button"
+              type="radio"
+              name="priority-radio-buttons"
+              value="2"
+            />
+            <span class="checkmark"></span>
+          </label>
+          <label class="container">
+            High<input
+              class="radio-button"
+              type="radio"
+              name="priority-radio-buttons"
+              value="3"
+            />
+            <span class="checkmark"></span>
+          </label>
         </div>
-        <div>
-          <button
-            id="addBtn"
-            type="button"
-            class="btn btn-primary btn-lg"
-            onclick="saveComment()"
-          >
-            Save
-          </button>
-        </div>
-        <div id="editBtns">
-          <button
-            id="deleteBtn"
-            type="button"
-            class="btn btn-outline-primary btn-lg"
-            onclick="deleteComment()"
-          >
-            Delete
-          </button>
-          <button
-            id="updateBtn"
-            type="button"
-            class="btn btn-primary btn-lg"
-            onclick="updateComment()"
-          >
-            Update
-          </button>
-        </div>
+      </div>
+      <div id="addBtnDiv">
+        <button
+          id="addBtn"
+          type="button"
+          class="btn btn-primary btn-lg"
+          onclick="saveComment()"
+        >
+          Save
+        </button>
+      </div>
+      <div id="editBtns">
+        <button
+          id="deleteBtn"
+          type="button"
+          class="btn btn-secondary btn-lg"
+          onclick="deleteComment()"
+        >
+          Delete
+        </button>
+        <button
+          id="updateBtn"
+          type="button"
+          class="btn btn-primary btn-lg"
+          onclick="updateComment()"
+        >
+          Update
+        </button>
       </div>
     </div>
     <script
@@ -91,10 +110,20 @@
       function saveComment() {
         const titleText = document.getElementById("title").value;
         const commentText = document.getElementById("textBox").value;
+        const priorities = document.querySelectorAll(
+          'input[name="priority-radio-buttons"]:checked'
+        );
+
         const comment = {
           title: titleText,
           text: commentText,
         };
+
+        // Check if any priority score is selected
+        if (priorities.length > 0) {
+          comment.priority = priorities[0].value;
+        }
+
         vscode.postMessage({ command: "saveComment", data: comment });
       }
 
@@ -110,10 +139,14 @@
           document.getElementById("commentData").dataset.commentId;
         const newTitle = document.getElementById("title").value;
         const newCommentText = document.getElementById("textBox").value;
+        const newPriorities = document.querySelectorAll(
+          'input[name="priority-radio-buttons"]:checked'
+        );
         const newComment = {
+          id: parseInt(newCommentId),
           title: newTitle,
           text: newCommentText,
-          id: parseInt(newCommentId),
+          priority: newPriorities[0].value,
         };
         vscode.postMessage({ command: "updateComment", data: newComment });
       }
