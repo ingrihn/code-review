@@ -8,10 +8,9 @@ import {
   icon,
   iconDecoration,
 } from "../extension";
+import { GeneralComment, InlineComment } from "../comment";
 import { Position, Range, window } from "vscode";
 import { getFilePath, getRelativePath, readFromFile } from "./file-utils";
-
-import { GeneralComment, InlineComment } from "../comment";
 
 /**
  * Get comments for a specific file.
@@ -113,18 +112,17 @@ export async function getGeneralComments(): Promise<GeneralComment[]> {
  * @param {Number} rubricId The id of the rubric
  * @returns {Promise<GeneralComment | undefined>} The general comment for the specified rubric, or undefined if no such comment exists
  */
-export async function getCommentFromRubric(rubricId: Number): Promise<GeneralComment | undefined> {
+export async function getCommentFromRubric(
+  rubricId: Number
+): Promise<GeneralComment | undefined> {
   const savedComments = await getGeneralComments();
   let comment = undefined;
   if (savedComments.length > 0) {
     comment = savedComments.find(
-        (generalComment: {
-          comment: string;
-          rubricId: number;
-          score?: number;
-        }) => generalComment.rubricId === rubricId
-      );
-  };
+      (generalComment: { comment: string; rubricId: number; score?: number }) =>
+        generalComment.rubricId === rubricId
+    );
+  }
   return comment;
 }
 
@@ -133,22 +131,24 @@ export async function getCommentFromRubric(rubricId: Number): Promise<GeneralCom
  * @param {{ comment: string; score?: number; rubricId: number }[]} generalComments The list of objects to convert
  * @returns {GeneralComment[]} A list of GeneralComment objects
  */
-export function convertToGeneralComment(generalComments: { comment: string; score?: number; rubricId: number }[]): GeneralComment[] {
+export function convertToGeneralComment(
+  generalComments: { comment: string; score?: number; rubricId: number }[]
+): GeneralComment[] {
   const commentsToSave: GeneralComment[] = [];
 
-    if (generalComments !== undefined) {
-      generalComments.forEach((generalComment) => {
-        if (generalComment.comment !== "" || generalComment.score !== undefined) {
-          const generalCommentData: GeneralComment = {
-            comment: generalComment.comment,
-            score: generalComment.score,
-            rubricId: generalComment.rubricId
-          };
-          commentsToSave.push(generalCommentData);
-        }
-      });
-    }
-    return commentsToSave;
+  if (generalComments !== undefined) {
+    generalComments.forEach((generalComment) => {
+      if (generalComment.comment !== "" || generalComment.score !== undefined) {
+        const generalCommentData: GeneralComment = {
+          comment: generalComment.comment,
+          score: generalComment.score,
+          rubricId: generalComment.rubricId,
+        };
+        commentsToSave.push(generalCommentData);
+      }
+    });
+  }
+  return commentsToSave;
 }
 
 /**
@@ -156,20 +156,30 @@ export function convertToGeneralComment(generalComments: { comment: string; scor
  * @param {GeneralComment[]} generalComments The list of GeneralComment objects to convert
  * @returns {{ comment: string; score?: number; rubricId: number }[]} A list of objects with the attributes comment, score and rubricId
  */
-export function convertFromGeneralComment(generalComments: GeneralComment[]): { comment: string; score?: number; rubricId: number }[] {
-  const commentsToSave: { comment: string; score?: number; rubricId: number }[] = [];
+export function convertFromGeneralComment(
+  generalComments: GeneralComment[]
+): { comment: string; score?: number; rubricId: number }[] {
+  const commentsToSave: {
+    comment: string;
+    score?: number;
+    rubricId: number;
+  }[] = [];
 
-    if (generalComments !== undefined) {
-      generalComments.forEach((generalComment) => {
-        if (generalComment.comment !== "" || generalComment.score !== undefined) {
-          const generalCommentData: { comment: string; score?: number; rubricId: number } = {
-            comment: generalComment.comment,
-            score: generalComment.score,
-            rubricId: generalComment.rubricId
-          };
-          commentsToSave.push(generalCommentData);
-        }
-      });
-    }
-    return commentsToSave;
+  if (generalComments !== undefined) {
+    generalComments.forEach((generalComment) => {
+      if (generalComment.comment !== "" || generalComment.score !== undefined) {
+        const generalCommentData: {
+          comment: string;
+          score?: number;
+          rubricId: number;
+        } = {
+          comment: generalComment.comment,
+          score: generalComment.score,
+          rubricId: generalComment.rubricId,
+        };
+        commentsToSave.push(generalCommentData);
+      }
+    });
+  }
+  return commentsToSave;
 }

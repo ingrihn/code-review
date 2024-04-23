@@ -26,7 +26,11 @@
       },
       {
         "command": "extension.showOverview",
-        "title": "Inline comments"
+        "title": "Inline Comments"
+      },
+      {
+        "command": "extension.submitReview",
+        "title": "Submit Review"
       }
     ],
     "menus": {
