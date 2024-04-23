@@ -5,6 +5,7 @@ import {
   ExtensionContext,
   Position,
   Range,
+  StatusBarAlignment,
   TextEditor,
   TextEditorDecorationType,
   TextEditorSelectionChangeEvent,
@@ -17,6 +18,7 @@ import {
 import {
   getComment,
   showComments,
+  submitReview,
 } from "./utils/comment-utils";
 
 import { GeneralViewProvider } from "./general-view-provider";
@@ -220,6 +222,20 @@ export async function activate(context: ExtensionContext) {
       }
     )
   );
+
+  // Register command for submitting all comments
+  context.subscriptions.push(commands.registerCommand("extension.submitReview", async () => 
+    {
+      submitReview();
+    }));
+
+  // Add submit button to status bar
+  const submitItem = window.createStatusBarItem(StatusBarAlignment.Left);
+  submitItem.text = "$(feedback) " + "Submit review";
+  submitItem.tooltip = "Select when code review is finished";
+  submitItem.command = "extension.submitReview";
+  submitItem.show();
+  context.subscriptions.push(submitItem);
 }
 
 /**
@@ -249,7 +265,7 @@ export function handleMessageFromWebview(message: any) {
       saveGeneralComments(commentsData);
       break;
     case "submitReview":
-      window.showInformationMessage("Review successfully submitted.");
+      submitReview();
       break;
     case "showOverview":
       commands.executeCommand("extension.showOverview");
