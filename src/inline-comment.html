@@ -64,33 +64,45 @@
         </div>
       </div>
 
-      <div id="addBtnDiv">
-        <button
-          id="addBtn"
-          type="button"
-          class="btn btn-primary btn-lg"
-          onclick="saveComment()"
-        >
-          Save
-        </button>
-      </div>
-      <div id="editBtns">
-        <button
-          id="deleteBtn"
-          type="button"
-          class="btn btn-secondary btn-lg"
-          onclick="deleteComment()"
-        >
-          Delete
-        </button>
-        <button
-          id="updateBtn"
-          type="button"
-          class="btn btn-primary btn-lg"
-          onclick="updateComment()"
-        >
-          Update
-        </button>
+      <div id="btnGroup2">
+        <div>
+          <button
+            id="overviewBtn"
+            type="button"
+            class="btn btn-outline-primary btn-lg"
+            onclick="showOverview()"
+          >
+            Show all inline comments
+          </button>
+        </div>
+        <div>
+          <button
+            id="addBtn"
+            type="button"
+            class="btn btn-primary btn-lg"
+            onclick="saveComment()"
+          >
+            Save
+          </button>
+        </div>
+        <div id="editBtns">
+          <button
+            id="deleteBtn"
+            type="button"
+            class="btn btn-outline-primary btn-lg"
+            onclick="deleteComment()"
+          >
+            Delete
+          </button>
+          <button
+            id="updateBtn"
+            type="button"
+            class="btn btn-primary btn-lg"
+            onclick="updateComment()"
+          >
+            Update
+          </button>
+        </div>
       </div>
     </div>
     <script
