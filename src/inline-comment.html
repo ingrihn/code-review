@@ -10,7 +10,7 @@
       integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN"
       crossorigin="anonymous"
     />
-    <link rel="stylesheet" type="text/css" href="${cssPath}" />
+    <link rel="stylesheet" type="text/css" href="${cssUri}" />
   </head>
   <body>
     <h1>Inline comment</h1>
@@ -24,37 +24,46 @@
       />
       <textarea placeholder="Comment" id="textBox">${commentText}</textarea>
       <br />
-      <div class="flex-container">
-        <div class="radio-button-group">
-          <label class="container">
-            Low<input
-              class="radio-button"
-              type="radio"
-              name="priority-radio-buttons"
-              value="1"
+
+      <div id="priority-container">
+        <div>
+          <h2>Choose priority</h2>
+        </div>
+        <div id="priority-buttons">
+          <p class="priority-label">Low</p>
+          <label for="low-priority">
+            <input type="radio" id="low-priority" name="priority" value="1" />
+            <img
+              class="priority-icon"
+              src="${lowIconUri}"
+              alt="Low priority icon"
             />
-            <span class="checkmark"></span>
           </label>
-          <label class="container">
-            Medium<input
-              class="radio-button"
+          <label for="medium-priority">
+            <input
               type="radio"
-              name="priority-radio-buttons"
+              id="medium-priority"
+              name="priority"
               value="2"
             />
-            <span class="checkmark"></span>
-          </label>
-          <label class="container">
-            High<input
-              class="radio-button"
-              type="radio"
-              name="priority-radio-buttons"
-              value="3"
+            <img
+              class="priority-icon"
+              src="${mediumIconUri}"
+              alt="Medium priority icon"
             />
-            <span class="checkmark"></span>
           </label>
+          <label for="high-priority">
+            <input type="radio" id="high-priority" name="priority" value="3" />
+            <img
+              class="priority-icon"
+              src="${highIconUri}"
+              alt="High priority icon"
+            />
+          </label>
+          <p class="priority-label">High</p>
         </div>
       </div>
+
       <div id="addBtnDiv">
         <button
           id="addBtn"
@@ -92,6 +101,15 @@
     <script>
       const vscode = acquireVsCodeApi();
 
+      const priorities = document.getElementsByName("priority");
+
+      // Attach a change event listener to each radio button
+      priorities.forEach(function (radioButton) {
+        radioButton.addEventListener("change", function () {
+          // Log the value of the checked radio button
+          console.log("Selected priority:", this.value);
+        });
+      });
       // Autofocus on the text area
       const title = document.getElementById("title");
       title.focus();
@@ -110,8 +128,8 @@
       function saveComment() {
         const titleText = document.getElementById("title").value;
         const commentText = document.getElementById("textBox").value;
-        const priorities = document.querySelectorAll(
-          'input[name="priority-radio-buttons"]:checked'
+        const checkedPriority = document.querySelector(
+          'input[name="priority"]:checked'
         );
 
         const comment = {
@@ -119,9 +137,8 @@
           text: commentText,
         };
 
-        // Check if any priority score is selected
-        if (priorities.length > 0) {
-          comment.priority = priorities[0].value;
+        if (checkedPriority) {
+          comment.priority = checkedPriority.value;
         }
 
         vscode.postMessage({ command: "saveComment", data: comment });
@@ -139,14 +156,14 @@
           document.getElementById("commentData").dataset.commentId;
         const newTitle = document.getElementById("title").value;
         const newCommentText = document.getElementById("textBox").value;
-        const newPriorities = document.querySelectorAll(
-          'input[name="priority-radio-buttons"]:checked'
+        const newPriority = document.querySelector(
+          'input[name="priority"]:checked'
         );
         const newComment = {
           id: parseInt(newCommentId),
           title: newTitle,
           text: newCommentText,
-          priority: newPriorities[0].value,
+          priority: newPriority.value,
         };
         vscode.postMessage({ command: "updateComment", data: newComment });
       }

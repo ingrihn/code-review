@@ -146,16 +146,26 @@ export async function activate(context: ExtensionContext) {
 
         const webviewPath = Uri.joinPath(
           context.extensionUri,
-          "src",
-          "inline-comment.html"
+          "src/inline-comment.html"
         );
-        const cssPath = Uri.joinPath(
-          context.extensionUri,
-          "src",
-          "styles",
-          "style.css"
+        const cssUri = panel.webview.asWebviewUri(
+          Uri.joinPath(context.extensionUri, "src/styles/style.css")
         );
-        const cssUri = panel.webview.asWebviewUri(cssPath);
+        const lowIconUri = panel.webview.asWebviewUri(
+          Uri.joinPath(context.extensionUri, "src/assets/priority-low-icon.svg")
+        );
+        const mediumIconUri = panel.webview.asWebviewUri(
+          Uri.joinPath(
+            context.extensionUri,
+            "src/assets/priority-medium-icon.svg"
+          )
+        );
+        const highIconUri = panel.webview.asWebviewUri(
+          Uri.joinPath(
+            context.extensionUri,
+            "src/assets/priority-high-icon.svg"
+          )
+        );
 
         fs.promises
           .readFile(webviewPath.fsPath, "utf-8")
@@ -168,10 +178,13 @@ export async function activate(context: ExtensionContext) {
 
             // Shows the comment's value in the webview HTML
             let htmlContent = data
-              .replace("${cssPath}", cssUri.toString())
+              .replace("${cssUri}", cssUri.toString())
               .replace("${commentText}", commentText)
               .replace("${commentId}", commentId.toString())
-              .replace("${commentTitle}", title);
+              .replace("${commentTitle}", title)
+              .replace("${lowIconUri}", lowIconUri.toString())
+              .replace("${mediumIconUri}", mediumIconUri.toString())
+              .replace("${highIconUri}", highIconUri.toString());
 
             if (priority) {
               htmlContent = htmlContent.replace(
