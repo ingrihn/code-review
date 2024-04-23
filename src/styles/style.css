@@ -37,6 +37,13 @@ body.vscode-light {
   margin-right: 0.5em;
 }
 
+.priority-icon {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+}
+
 .btn-primary {
   background-color: var(--primary-color);
   color: black;
@@ -90,6 +97,11 @@ h1 {
   font-weight: bold;
 }
 
+h2 {
+  font-size: 1em;
+  font-weight: bold;
+}
+
 h3 {
   font-size: 0.9em;
   font-weight: bold;
@@ -121,16 +133,65 @@ input[class="btn-check"]:hover + label {
   border-color: var(--secondary-color) !important;
 }
 
-.flex-container {
+.flex-container,
+#priority-container {
   display: flex;
   justify-content: center;
   align-items: center;
+}
+
+#priority-container {
+  margin: 1.7em 0;
+  flex-direction: column;
 }
 
 .radio-button-group {
   max-width: 100%;
   margin-top: 0.2em;
   display: flex;
+}
+
+/* Radio buttons for priority in inline comments */
+.priority-button-group {
+  max-width: 100%;
+  margin-top: 0.2em;
+  display: flex;
+}
+
+#priority-buttons {
+  width: 60%;
+  position: relative;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-evenly;
+}
+
+.priority-label {
+  margin: 0;
+}
+
+/* Hides radio buttons to show SVG for priority */
+#low-priority,
+#medium-priority,
+#high-priority {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+[type="radio"] + img {
+  cursor: pointer;
+}
+
+.priority-icon:not(:checked) {
+  filter: grayscale(100%);
+}
+
+/* Shows colour of chosen priority */
+input[name="priority"]:checked + img {
+  filter: grayscale(0%);
 }
 
 .rubric {
@@ -227,6 +288,12 @@ input {
 
 @media (max-width: 235px) {
   .radio-button-group {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 400px) {
+  #priority-buttons {
     flex-direction: column;
   }
 }
