@@ -5,6 +5,7 @@ import {
   ExtensionContext,
   Position,
   Range,
+  StatusBarAlignment,
   TextEditor,
   TextEditorDecorationType,
   TextEditorSelectionChangeEvent,
@@ -23,7 +24,7 @@ import {
   saveGeneralComments,
   updateComment,
 } from "./utils/file-utils";
-import { getComment, showComments } from "./utils/comment-utils";
+import { getComment, showComments, submitReview } from "./utils/comment-utils";
 
 import { GeneralViewProvider } from "./general-view-provider";
 import { InlineComment } from "./comment";
@@ -100,20 +101,21 @@ export async function activate(context: ExtensionContext) {
   );
 
   // Create tree view in the panel
-  const treeView = window.createTreeView(viewId, { treeDataProvider, showCollapseAll: true, canSelectMany: false });
+  const treeView = window.createTreeView(viewId, {
+    treeDataProvider,
+    showCollapseAll: true,
+    canSelectMany: false,
+  });
 
   // Register command to show the tree view when executed
   context.subscriptions.push(
-    commands.registerCommand(
-      "extension.showOverview",
-      () => {
-        treeDataProvider.getFirstElement().then((firstElement) => {
-          if (firstElement) {
-            treeView.reveal(firstElement, { select: false, focus: false });
-          }
-        });
-      }
-    )
+    commands.registerCommand("extension.showOverview", () => {
+      treeDataProvider.getFirstElement().then((firstElement) => {
+        if (firstElement) {
+          treeView.reveal(firstElement, { select: false, focus: false });
+        }
+      });
+    })
   );
 
   commands.executeCommand("extension.showOverview");
@@ -239,6 +241,21 @@ export async function activate(context: ExtensionContext) {
       }
     )
   );
+
+  // Register command for submitting all comments
+  context.subscriptions.push(
+    commands.registerCommand("extension.submitReview", async () => {
+      submitReview();
+    })
+  );
+
+  // Add submit button to status bar
+  const submitItem = window.createStatusBarItem(StatusBarAlignment.Left);
+  submitItem.text = "$(feedback) " + "Submit review";
+  submitItem.tooltip = "Select when code review is finished";
+  submitItem.command = "extension.submitReview";
+  submitItem.show();
+  context.subscriptions.push(submitItem);
 }
 
 /**
@@ -276,7 +293,7 @@ export function handleMessageFromWebview(message: any) {
       saveGeneralComments(commentsData);
       break;
     case "submitReview":
-      window.showInformationMessage("Review successfully submitted.");
+      submitReview();
       break;
     case "showOverview":
       commands.executeCommand("extension.showOverview");

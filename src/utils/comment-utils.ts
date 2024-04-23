@@ -1,5 +1,3 @@
-import * as fs from "fs";
-
 import {
   INLINE_COMMENTS_FILE,
   activeEditor,
@@ -9,7 +7,6 @@ import {
   highlightDecoration,
   icon,
   iconDecoration,
-  treeDataProvider,
 } from "../extension";
 import { Position, Range, window } from "vscode";
 import { getFilePath, getRelativePath, readFromFile } from "./file-utils";
@@ -99,4 +96,8 @@ export async function getComment(
     comment = allComments.find((c: InlineComment) => c.id === commentId);
   }
   return comment;
+}
+
+export function submitReview() {
+  window.showInformationMessage("Review successfully submitted.");
 }
