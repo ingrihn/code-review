@@ -133,4 +133,22 @@ export class InlineCommentItemProvider
   public refresh(): void {
     this._onDidChangeTreeData.fire();
   }
+
+  public getFirstElement(): Promise<InlineCommentItem | undefined> {
+    return new Promise((resolve) => {
+      this.getChildren().then((children) => {
+        if (children.length > 0) {
+          resolve(children[0]);
+        } else {
+          resolve(undefined);
+        }
+      });
+    });
+  }
+
+  public getParent(element: InlineCommentItem): Thenable<InlineCommentItem | undefined> {
+    return Promise.resolve(undefined); // Since there are no hierarchical relationships, always return undefined
+  }
+
+  
 }

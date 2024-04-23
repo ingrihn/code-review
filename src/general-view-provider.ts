@@ -97,7 +97,7 @@ export class GeneralViewProvider implements WebviewViewProvider {
       }
 
       content += `<div class="rubric" data-rubric-id="${rubricId}">
-      <h4 id="rubricTitle">
+      <h3 id="rubricTitle">
         <svg
           xmlns="http://www.w3.org/2000/svg"
           width="13"
@@ -111,7 +111,7 @@ export class GeneralViewProvider implements WebviewViewProvider {
           />
         </svg>
         ${rubric.title}
-      </h4>
+      </h3>
       <p id="rubricDescription">
         ${rubric.description}
       </p>
