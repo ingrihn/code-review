@@ -18,11 +18,15 @@
     "commands": [
       {
         "command": "extension.showCommentSidebar",
-        "title": "✏️ CollabRate: Add Comment"
+        "title": "✏️ CollabRate: Add Inline Comment"
       },
       {
         "command": "extension.navigateToComment",
         "title": "Tree View Comment"
+      },
+      {
+        "command": "extension.showOverview",
+        "title": "Inline comments"
       }
     ],
     "menus": {
@@ -37,19 +41,28 @@
     "viewsContainers": {
       "activitybar": [
         {
-          "id": "collabrate",
+          "id": "activity-bar",
           "title": "CollabRate",
-          "icon": "$(comment)"
+          "icon": "$(feedback)"
+        }
+      ],
+      "panel": [
+        {
+          "id": "panel",
+          "title": "Inline Comments",
+          "icon": "$(pencil)"
         }
       ]
     },
     "views": {
-      "collabrate": [
+      "activity-bar": [
         {
           "type": "webview",
           "id": "collabrate-general",
           "name": "General Comments"
-        },
+        }
+      ],
+      "panel": [
         {
           "id": "collabrate-inline",
           "name": "Inline comments"

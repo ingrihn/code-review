@@ -26,11 +26,17 @@ body.vscode-dark,
 body.vscode-high-contrast {
   background-color: var(--dark-background);
   color: var(--dark-text);
+  #btnGroup {
+    background-color: var(--dark-background);
+  }
 }
 
 body.vscode-light {
   background-color: var(--light-background);
   color: var(--light-text);
+  #btnGroup {
+    background-color: var(--light-background);
+  }
 }
 
 #saveBtn {
@@ -67,6 +73,21 @@ body.vscode-light {
   }
 }
 
+.btn-outline-primary {
+  /* background-color: var(--tertiary-color); */
+  color: var(--primary-color);
+  border-color: var(--primary-color);
+
+  &:hover {
+    background-color: var(--secondary-color);
+    border-color: var(--secondary-color);
+  }
+
+  &:active {
+    background-color: var(--tertiary-color) !important;
+  }
+}
+
 .btn-sm {
   font-size: 0.7em;
   margin-bottom: 1em;
@@ -75,38 +96,43 @@ body.vscode-light {
 .btn-lg {
   font-size: 0.8em;
   padding: 0.4em 1.3em;
-  border-radius: 10%;
 }
 
-#editBtns,
-#addBtnDiv,
+#btnGroup2 {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  flex-wrap: wrap;
+}
+
 #btnGroup {
   display: flex;
   justify-content: right;
+  width: 100%;
+  padding-top: 0.5em;
+  padding-right: 1em;
+  position: fixed;
+  bottom: 0em;
+  right: 0em;
 }
 
 h1 {
-  font-size: 1.3em;
+  font-size: 1.5em;
+  font-weight: bold;
+}
+
+h2 {
+  font-size: 1em;
   font-weight: bold;
 }
 
 h3 {
-  font-size: 0.9em;
-  font-weight: bold;
-}
-
-h4 {
   font-size: 0.8em;
   font-weight: 600;
 }
 
 #rubricDescription {
   font-size: 0.7em;
-}
-
-.btn-outline-primary {
-  border-color: var(--secondary-color);
-  color: var(--secondary-color);
 }
 
 input[class="btn-check"]:checked + label {
@@ -165,7 +191,11 @@ input {
 }
 
 #deleteBtn {
-  margin-right: 1em;
+  margin-right: 0.5em;
+}
+
+#overviewBtn {
+  margin-bottom: 0.5em;
 }
 
 .container {

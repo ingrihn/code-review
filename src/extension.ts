@@ -94,8 +94,24 @@ export async function activate(context: ExtensionContext) {
     })
   );
 
-  // Register provider for the tree view
-  window.registerTreeDataProvider(viewId, treeDataProvider);
+  // Create tree view in the panel
+  const treeView = window.createTreeView(viewId, { treeDataProvider, showCollapseAll: true, canSelectMany: false });
+
+  // Register command to show the tree view when executed
+  context.subscriptions.push(
+    commands.registerCommand(
+      "extension.showOverview",
+      () => {
+        treeDataProvider.getFirstElement().then((firstElement) => {
+          if (firstElement) {
+            treeView.reveal(firstElement, { select: false, focus: false });
+          }
+        });
+      }
+    )
+  );
+
+  commands.executeCommand("extension.showOverview");
 
   // Shows the webview panel
   context.subscriptions.push(
@@ -234,6 +250,10 @@ export function handleMessageFromWebview(message: any) {
       break;
     case "submitReview":
       window.showInformationMessage("Review successfully submitted.");
+      break;
+    case "showOverview":
+      commands.executeCommand("extension.showOverview");
+      break;
     default:
       deactivate();
       break; // Handle unknown command
