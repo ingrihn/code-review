@@ -11,6 +11,7 @@ import { GeneralComment, InlineComment } from "../comment";
 import { Selection, Uri, window, workspace } from "vscode";
 
 import path from "path";
+import { convertToGeneralComment, getCommentFromRubric } from "./comment-utils";
 
 /**
  * Reads contents of a given JSON file
@@ -173,41 +174,71 @@ export function deleteComment(id: number) {
 }
 
 /**
- * Saves a new draft of general comments in a JSON file
- * @param {{ comment: string; score: number; rubricId: number }[]} generalComments The comments to save.
+ * Saves a list of general comments in general-comments.json
+ * @param {{ comment: string; score?: number; rubricId: number }[]} generalComments The comments to save.
  */
-export async function saveGeneralComments(
-  generalComments: { comment: string; score: number; rubricId: number }[]
+async function saveGeneralComments(
+  generalComments: { comment: string; score?: number; rubricId: number }[]
 ) {
   const jsonFilePath = getFilePath(GENERAL_COMMENTS_FILE);
-
   try {
-    const newDraft: GeneralComment[] = [];
+    const commentsToSave: GeneralComment[] = convertToGeneralComment(generalComments);
+    const updatedData = { generalComments: commentsToSave };
+    const generalCommentsJson = JSON.stringify(updatedData);
+    await fs.promises.writeFile(jsonFilePath, generalCommentsJson);
 
-    generalComments.forEach((generalComment: any) => {
-      if (generalComment.comment !== "" || generalComment.score !== undefined) {
-        const generalCommentData: GeneralComment = {
-          id: Date.now(),
-          comment: generalComment.comment,
-          score: generalComment.score,
-          rubricId: generalComment.rubricId,
-        };
-        newDraft.push(generalCommentData);
-      }
-    });
-
-    if (newDraft.length > 0) {
-      const updatedData = { generalComments: newDraft };
-      const generalCommentsJson = JSON.stringify(updatedData);
-      await fs.promises.writeFile(jsonFilePath, generalCommentsJson);
-      window.showInformationMessage("Draft successfully saved.");
-    } else {
-      window.showInformationMessage("Cannot save empty draft.");
-    }
   } catch (error: any) {
     window.showErrorMessage(`Error saving to file: ${error.message}`);
     return;
   }
+}
+
+/**
+ * Saves a new draft of general comments in a JSON file
+ * @param {{ comment: string; score?: number; rubricId: number }[]} generalComments The comments to save.
+ */
+export async function saveDraft(generalComments: { comment: string; score?: number; rubricId: number }[]) {
+  saveGeneralComments(generalComments);
+}
+
+/**
+ * Submits the entire review
+ * @param {{ comment: string; score?: number; rubricId: number }[]} generalComments The comments to submit.
+ */
+export async function submitReview(generalComments: { comment: string; score?: number; rubricId: number }[]) {
+  try {
+    saveGeneralComments(generalComments);
+    const rubricsData = await readFromFile(getFilePath("rubrics.json"));
+    const rubrics = Array.from(rubricsData.rubrics);
+    let emptyRubric = false;
+    await Promise.all(rubrics.map(async (rubric: any) => {
+      let rubricId = Number(rubric.id);
+      const comment = await getCommentFromRubric(rubricId);
+      if (comment === undefined) {
+          emptyRubric = true;
+          window.showErrorMessage("You have not written a comment and/or given a score for some of the general comment rubrics. To fill in these, select the CollabRate icon in the activity bar on the far left.");
+      }
+    }));
+
+    if (!emptyRubric) {
+      window
+      .showWarningMessage(
+        "Are you sure you want to submit your review? This cannot be undone.",
+        ...["Yes", "No"]
+      )
+      .then(async (answer) => {
+        if (answer === "Yes") {
+          deactivate();
+          window.showInformationMessage("Review successfully submitted.");
+        }
+      });
+    }
+
+  } catch (error) {
+    window.showErrorMessage(`Error submitting review: ${error}`);
+    return;
+  }
+  
 }
 
 /**

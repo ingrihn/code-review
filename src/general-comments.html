@@ -17,14 +17,24 @@
     <div id="rubricContainer">${rubrics}</div>
     <br />
     <div id="btnGroup">
-      <button
-        id="saveBtn"
-        type="button"
-        class="btn btn-secondary btn-sm"
-        onclick="saveDraft()"
-      >
-        Save as draft
-      </button>
+      <div id="savingDiv" class="saveDiv">
+        <img
+          id="loadingIcon"
+          class="saveIcon"
+          src="${loadingUri}"
+          alt="Loading icon"
+        />
+        <p id="savingText" class="saveText">Saving...</p>
+      </div>
+      <div id="savedDiv" class="saveDiv">
+        <img
+          id="checkmark"
+          class="saveIcon"
+          src="${checkmarkUri}"
+          alt="Checkmark"
+        />
+        <p class="saveText">Saved!</p>
+      </div>
       <button
         type="button"
         class="btn btn-primary btn-sm"
@@ -40,8 +50,16 @@
     ></script>
     <script>
       const vscode = acquireVsCodeApi();
+      const savedDiv = document.getElementById("savedDiv");
+      const savingDiv = document.getElementById("savingDiv");
+      const loadingIcon = document.getElementById("loadingIcon");
+      const savingText = document.getElementById("savingText");
 
-      function saveDraft() {
+      savedDiv.style.display = "none";
+      loadingIcon.style.display = "none";
+      savingText.style.display = "none";
+
+      function getGeneralComments() {
         let rubrics = document.getElementsByClassName("rubric");
         rubrics = Array.from(rubrics);
         let generalComments = [];
@@ -73,7 +91,13 @@
             generalComments.push(generalComment);
           }
         });
+        return generalComments;
+      }
 
+      function saveDraft() {
+        savedDiv.style.display = "flex";
+        savingDiv.style.display = "none";
+        const generalComments = getGeneralComments();
         vscode.postMessage({
           command: "draftStored",
           data: generalComments,
@@ -81,10 +105,49 @@
       }
 
       function submitReview() {
+        const generalComments = getGeneralComments();
         vscode.postMessage({
           command: "submitReview",
+          data: generalComments,
         });
       }
+
+      window.addEventListener("message", (event) => {
+        const message = event.data;
+        if (message === "getGeneralCommentsSubmit") {
+          submitReview();
+        }
+      });
+
+      let radioBtns = document.getElementsByClassName("radio-button");
+      radioBtns = Array.from(radioBtns);
+      let commentBoxes = document.getElementsByClassName("commentBox");
+      commentBoxes = Array.from(commentBoxes);
+
+      function updateDisplay() {
+        savedDiv.style.display = "none";
+        savingDiv.style.display = "flex";
+        loadingIcon.style.display = "inline";
+        savingText.style.display = "inline";
+      }
+
+      commentBoxes.forEach((commentBox) => {
+        let timeout;
+        commentBox.addEventListener("input", () => {
+          updateDisplay();
+          clearTimeout(timeout);
+          timeout = setTimeout(saveDraft, 1000);
+        });
+      });
+
+      radioBtns.forEach((radioBtn) => {
+        let timeout;
+        radioBtn.addEventListener("change", () => {
+          updateDisplay();
+          clearTimeout(timeout);
+          timeout = setTimeout(saveDraft, 1000);
+        });
+      });
     </script>
   </body>
 </html>

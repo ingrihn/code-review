@@ -16,16 +16,17 @@ import {
   window,
 } from "vscode";
 import {
+  convertFromGeneralComment,
   getComment,
-  showComments,
-  submitReview,
+  getGeneralComments,
+  showComments
 } from "./utils/comment-utils";
 
 import { GeneralViewProvider } from "./general-view-provider";
 import { InlineComment } from "./comment";
 import { InlineCommentItemProvider } from "./inline-comment-item-provider";
 import path from "path";
-import { checkIfFileExists, deleteComment, getFilePath, getRelativePath, saveComment, saveGeneralComments, updateComment } from "./utils/file-utils";
+import { checkIfFileExists, deleteComment, getFilePath, getRelativePath, saveComment, saveDraft, submitReview, updateComment } from "./utils/file-utils";
 
 export let activeEditor: TextEditor;
 export let treeDataProvider: InlineCommentItemProvider;
@@ -74,6 +75,7 @@ export async function activate(context: ExtensionContext) {
           _context,
           _token
         );
+        
         context.subscriptions.push(
           webviewView.onDidChangeVisibility(async (e) => {
             try {
@@ -82,6 +84,7 @@ export async function activate(context: ExtensionContext) {
                 _context,
                 _token
               );
+              
             } catch (error) {
               console.error("Error fetching rubrics JSON:", error);
             }
@@ -226,8 +229,15 @@ export async function activate(context: ExtensionContext) {
   // Register command for submitting all comments
   context.subscriptions.push(commands.registerCommand("extension.submitReview", async () => 
     {
-      submitReview();
-    }));
+      if (generalViewProvider.getView() !== undefined && generalViewProvider.getView()?.visible) {
+        generalViewProvider.getView()!.webview.postMessage("getGeneralCommentsSubmit");
+      } else {
+        const generalComments = await getGeneralComments();
+        const commentsToSave: { comment: string; score?: number; rubricId: number }[] = convertFromGeneralComment(generalComments);
+        submitReview(commentsToSave);
+      }
+    }
+  ));
 
   // Add submit button to status bar
   const submitItem = window.createStatusBarItem(StatusBarAlignment.Left);
@@ -262,10 +272,11 @@ export function handleMessageFromWebview(message: any) {
       break;
     case "draftStored":
       const commentsData = message.data;
-      saveGeneralComments(commentsData);
+      saveDraft(commentsData);
       break;
     case "submitReview":
-      submitReview();
+      const generalCommentsData = message.data;
+      submitReview(generalCommentsData);
       break;
     case "showOverview":
       commands.executeCommand("extension.showOverview");

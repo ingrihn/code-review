@@ -43,6 +43,12 @@ export class GeneralViewProvider implements WebviewViewProvider {
       "src",
       "general-comments.html"
     );
+    const loadingIconPath = webviewView.webview.asWebviewUri(Uri.joinPath(this._extensionUri, "src",
+    "assets",
+    "loadingIcon.gif"));
+    const checkmarkPath = webviewView.webview.asWebviewUri(Uri.joinPath(this._extensionUri, "src",
+    "assets",
+    "checkmark.svg"));
 
     try {
       const [data, rubricsJson] = await Promise.all([
@@ -55,7 +61,9 @@ export class GeneralViewProvider implements WebviewViewProvider {
       //Sets the CSS and load the HTML for the rubrics into the webview view
       let htmlContent = data
         .replace("${cssPath}", cssUri.toString())
-        .replace("${rubrics}", rubricHtml);
+        .replace("${rubrics}", rubricHtml)
+        .replace("${loadingUri}", loadingIconPath.toString())
+        .replace("${checkmarkUri}", checkmarkPath.toString());
 
       webviewView.webview.html = htmlContent;
     } catch (error) {

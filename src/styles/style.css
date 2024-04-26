@@ -107,7 +107,8 @@ body.vscode-light {
 
 #btnGroup {
   display: flex;
-  justify-content: right;
+  justify-content: space-between;
+  align-items: center;
   width: 100%;
   padding-top: 0.5em;
   padding-right: 1em;
@@ -196,6 +197,22 @@ input {
 
 #overviewBtn {
   margin-bottom: 0.5em;
+}
+
+.saveDiv {
+  display: flex;
+  padding-top: 0.2em;
+}
+
+.saveIcon {
+  margin-left: 1.5em;
+  margin-right: 0.3em;
+  height: 1.2em;
+  width: 1.2em;
+}
+
+.saveText {
+  font-size: 0.8em;
 }
 
 .container {
