@@ -18,6 +18,11 @@ import {
   getWorkspaceFolderUri,
   readFromFile,
 } from "./utils/file-utils";
+import {
+  highPriorityIconUri,
+  lowPriorityIconUri,
+  mediumPriorityIconUri,
+} from "./assets/icon-uris";
 
 import { INLINE_COMMENTS_FILE } from "./extension";
 import { InlineComment } from "./comment";
@@ -52,6 +57,12 @@ export class InlineCommentItemProvider
     const fileData = await readFromFile(filePath);
     const savedComments = fileData.inlineComments;
 
+    // Sorts comments in descending priority
+    savedComments.sort(
+      (a: { priority: number }, b: { priority: number }) =>
+        (b.priority || 0) - (a.priority || 0)
+    );
+
     if (!element) {
       const addedFileNames: Set<string> = new Set();
 
@@ -72,16 +83,32 @@ export class InlineCommentItemProvider
           title: string;
           comment: string;
           start: { line: number; character: number };
+          priority?: number;
         }) => {
           if (element.label === comment.fileName) {
             const commentItem = new InlineCommentItem(
-              comment.title,
+              comment.title.toString(),
               TreeItemCollapsibleState.None,
-              comment.comment,
+              comment.comment.toString(),
               comment.fileName,
               comment.start.line,
               comment.start.character
             );
+
+            switch (comment.priority) {
+              case 3:
+                commentItem.iconPath = highPriorityIconUri;
+
+                break;
+              case 2:
+                commentItem.iconPath = mediumPriorityIconUri;
+                break;
+              case 1:
+                commentItem.iconPath = lowPriorityIconUri;
+                break;
+              default:
+                break;
+            }
 
             commentItem.command = {
               command: "extension.navigateToComment",
@@ -122,6 +149,7 @@ export class InlineCommentItemProvider
         let range = new Range(position, position);
         editor.revealRange(range);
         const comment: InlineComment | undefined = await getComment(range);
+
         commands.executeCommand("extension.showCommentSidebar", comment);
       });
     });
@@ -146,9 +174,9 @@ export class InlineCommentItemProvider
     });
   }
 
-  public getParent(element: InlineCommentItem): Thenable<InlineCommentItem | undefined> {
+  public getParent(
+    element: InlineCommentItem
+  ): Thenable<InlineCommentItem | undefined> {
     return Promise.resolve(undefined); // Since there are no hierarchical relationships, always return undefined
   }
-
-  
 }

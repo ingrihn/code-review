@@ -7,7 +7,8 @@ export class InlineCommentItem extends TreeItem {
     public readonly comment?: string,
     public readonly fileName?: string,
     public readonly startLine?: number,
-    public readonly startCharacter?: number
+    public readonly startCharacter?: number,
+    public readonly priority?: number
   ) {
     super(label, collapsibleState);
     this.description = comment;

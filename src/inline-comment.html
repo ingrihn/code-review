@@ -35,7 +35,7 @@
             <input type="radio" id="low-priority" name="priority" value="1" />
             <img
               class="priority-icon"
-              src="${lowIconUri}"
+              src="${lowPriorityIconUri}"
               alt="Low priority icon"
             />
           </label>
@@ -48,7 +48,7 @@
             />
             <img
               class="priority-icon"
-              src="${mediumIconUri}"
+              src="${mediumPriorityIconUri}"
               alt="Medium priority icon"
             />
           </label>
@@ -56,7 +56,7 @@
             <input type="radio" id="high-priority" name="priority" value="3" />
             <img
               class="priority-icon"
-              src="${highIconUri}"
+              src="${highPriorityIconUri}"
               alt="High priority icon"
             />
           </label>
@@ -115,13 +115,6 @@
 
       const priorities = document.getElementsByName("priority");
 
-      // Attach a change event listener to each radio button
-      priorities.forEach(function (radioButton) {
-        radioButton.addEventListener("change", function () {
-          // Log the value of the checked radio button
-          console.log("Selected priority:", this.value);
-        });
-      });
       // Autofocus on the text area
       const title = document.getElementById("title");
       title.focus();
@@ -150,7 +143,7 @@
         };
 
         if (checkedPriority) {
-          comment.priority = checkedPriority.value;
+          comment.priority = parseInt(checkedPriority.value);
         }
 
         vscode.postMessage({ command: "saveComment", data: comment });
@@ -175,7 +168,7 @@
           id: parseInt(newCommentId),
           title: newTitle,
           text: newCommentText,
-          priority: newPriority.value,
+          priority: parseInt(newPriority.value),
         };
         vscode.postMessage({ command: "updateComment", data: newComment });
       }

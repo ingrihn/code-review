@@ -211,12 +211,12 @@ input[class="btn-check"]:hover + label {
   cursor: pointer;
 }
 
-.priority-icon:not(:checked) {
-  filter: grayscale(100%);
+.priority-icon {
+  filter: grayscale(80%);
 }
 
 /* Shows colour of chosen priority */
-input[name="priority"]:checked + img {
+input[name="priority"]:checked + .priority-icon {
   filter: grayscale(0%);
 }
 
