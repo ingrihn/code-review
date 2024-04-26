@@ -31,6 +31,12 @@ import {
   getGeneralComments,
   showComments,
 } from "./utils/comment-utils";
+import {
+  highPriorityIconUri,
+  initializeIconUris,
+  lowPriorityIconUri,
+  mediumPriorityIconUri,
+} from "./assets/icon-uris";
 
 import { GeneralViewProvider } from "./general-view-provider";
 import { InlineComment } from "./comment";
@@ -53,6 +59,8 @@ export async function activate(context: ExtensionContext) {
   treeDataProvider = new InlineCommentItemProvider();
   generalViewProvider = new GeneralViewProvider(context.extensionUri);
   activeEditor = window.activeTextEditor ?? window.visibleTextEditors[0];
+
+  // Declare icons
   icon = window.createTextEditorDecorationType({
     after: {
       contentIconPath: context.asAbsolutePath(
@@ -64,6 +72,7 @@ export async function activate(context: ExtensionContext) {
   highlight = window.createTextEditorDecorationType({
     backgroundColor: "#8CBEB260",
   });
+  initializeIconUris(context);
 
   // Makes JSON files if they don't already exist
   const commentsJson = getFilePath(INLINE_COMMENTS_FILE);
@@ -135,6 +144,7 @@ export async function activate(context: ExtensionContext) {
         if (panel) {
           panel.dispose();
         }
+
         panel = window.createWebviewPanel(
           "commentSidebar",
           "Inline Comment",
@@ -151,21 +161,15 @@ export async function activate(context: ExtensionContext) {
         const cssUri = panel.webview.asWebviewUri(
           Uri.joinPath(context.extensionUri, "src/styles/style.css")
         );
-        const lowIconUri = panel.webview.asWebviewUri(
-          Uri.joinPath(context.extensionUri, "src/assets/priority-low-icon.svg")
-        );
-        const mediumIconUri = panel.webview.asWebviewUri(
-          Uri.joinPath(
-            context.extensionUri,
-            "src/assets/priority-medium-icon.svg"
-          )
-        );
-        const highIconUri = panel.webview.asWebviewUri(
-          Uri.joinPath(
-            context.extensionUri,
-            "src/assets/priority-high-icon.svg"
-          )
-        );
+        const webviewLowPriorityIcon = panel.webview
+          .asWebviewUri(lowPriorityIconUri)
+          .toString();
+        const webviewMediumPriorityIcon = panel.webview
+          .asWebviewUri(mediumPriorityIconUri)
+          .toString();
+        const webviewHighPriorityIcon = panel.webview
+          .asWebviewUri(highPriorityIconUri)
+          .toString();
 
         fs.promises
           .readFile(webviewPath.fsPath, "utf-8")
@@ -182,9 +186,9 @@ export async function activate(context: ExtensionContext) {
               .replace("${commentText}", commentText)
               .replace("${commentId}", commentId.toString())
               .replace("${commentTitle}", title)
-              .replace("${lowIconUri}", lowIconUri.toString())
-              .replace("${mediumIconUri}", mediumIconUri.toString())
-              .replace("${highIconUri}", highIconUri.toString());
+              .replace("${lowPriorityIconUri}", webviewLowPriorityIcon)
+              .replace("${mediumPriorityIconUri}", webviewMediumPriorityIcon)
+              .replace("${highPriorityIconUri}", webviewHighPriorityIcon);
 
             if (priority) {
               htmlContent = htmlContent.replace(
