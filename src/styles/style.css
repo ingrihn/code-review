@@ -136,18 +136,6 @@ h3 {
   font-size: 0.7em;
 }
 
-input[class="btn-check"]:checked + label {
-  background-color: var(--primary-color) !important;
-  color: black !important;
-  border-color: var(--secondary-color) !important;
-}
-
-input[class="btn-check"]:hover + label {
-  background-color: var(--secondary-color) !important;
-  color: white !important;
-  border-color: var(--secondary-color) !important;
-}
-
 .flex-container {
   display: flex;
   justify-content: center;
@@ -201,7 +189,7 @@ input {
 
 .saveDiv {
   display: flex;
-  padding-top: 0.2em;
+  padding-top: 0.3em;
 }
 
 .saveIcon {
@@ -213,6 +201,7 @@ input {
 
 .saveText {
   font-size: 0.8em;
+  margin-top: 0.05em;
 }
 
 .container {
