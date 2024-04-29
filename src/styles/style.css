@@ -1,31 +1,33 @@
+/* COLOURS */
 :root {
-  --primary-color: #8cbeb2;
-  --secondary-color: #557a70;
-  --tertiary-color: #28443d;
-
+  --dark-primary-color: #9c8cd6;
+  --secondary-color: #7a61d3;
+  --dark-tertiary-color: #524778;
   --dark-background: #1e1f1c;
-  --dark-text: #cccccc;
+  --dark-text: #030303;
 
+  --light-primary-color: #4e4aa1;
+  --light-tertiary-color: #463d62;
   --light-background: #ffffff;
-  --light-text: #525252;
+  --light-text: #cccccc;
 }
 
-.commentBox {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  margin-bottom: 1em;
-}
-
+/* GENERAL STYLES */
 body {
   margin-top: 0.5em;
+  font-family: Helvetica, sans-serif;
+  font-size: 1.1em;
+}
+
+textarea,
+input::placeholder {
   font-family: Helvetica, sans-serif;
 }
 
 body.vscode-dark,
 body.vscode-high-contrast {
   background-color: var(--dark-background);
-  color: var(--dark-text);
+  color: var(--light-text);
   #btnGroup {
     background-color: var(--dark-background);
   }
@@ -33,76 +35,124 @@ body.vscode-high-contrast {
 
 body.vscode-light {
   background-color: var(--light-background);
-  color: var(--light-text);
+  color: var(--dark-text);
   #btnGroup {
     background-color: var(--light-background);
   }
 }
 
-#saveBtn {
-  margin-right: 0.5em;
+h1 {
+  font-size: 1em;
+  font-weight: bold;
 }
 
-.priority-icon {
-  max-width: 100%;
-  max-height: 100%;
-  width: auto;
-  height: auto;
+h2 {
+  font-size: 1.1em;
+  font-weight: bold;
 }
 
-.btn-primary {
-  background-color: var(--primary-color);
-  color: black;
-  border-color: var(--secondary-color);
-
-  &:hover {
-    background-color: var(--secondary-color);
-    border-color: var(--secondary-color);
-  }
-
-  &:active {
-    background-color: var(--tertiary-color) !important;
-  }
+h2 {
+  font-size: 0.9em;
+  font-weight: bold;
 }
 
-.btn-secondary {
-  background-color: #f4f4f4;
-  color: black;
-  border-color: black;
-
-  &:hover {
-    background-color: var(--secondary-color);
-    border-color: var(--secondary-color);
-  }
-
-  &:active {
-    background-color: var(--tertiary-color) !important;
-  }
-}
-
-.btn-outline-primary {
-  /* background-color: var(--tertiary-color); */
-  color: var(--primary-color);
-  border-color: var(--primary-color);
-
-  &:hover {
-    background-color: var(--secondary-color);
-    border-color: var(--secondary-color);
-  }
-
-  &:active {
-    background-color: var(--tertiary-color) !important;
-  }
-}
-
-.btn-sm {
-  font-size: 0.7em;
-  margin-bottom: 1em;
-}
-
-.btn-lg {
+h3 {
   font-size: 0.8em;
-  padding: 0.4em 1.3em;
+  font-weight: 600;
+}
+
+textarea {
+  width: 100%;
+  height: 8em;
+  padding: 0.3em;
+}
+
+input {
+  margin-bottom: 1em;
+  padding: 1%;
+  width: 100%;
+}
+
+/* BUTTONS */
+button {
+  padding: 0.5em 0.7em;
+  border: none;
+  background-color: transparent;
+  border-radius: 0.5em;
+}
+
+/* Light mode primary button */
+body.vscode-light .btn-primary {
+  background-color: var(--light-primary-color);
+  color: var(--light-text);
+  border: 1px solid var(--light-primary-color);
+
+  &:hover {
+    color: var(--light-text);
+    background-color: var(--secondary-color);
+    border: 1px solid var(--secondary-color);
+  }
+
+  &:active {
+    color: var(--light-text);
+    background-color: var(--light-tertiary-color) !important;
+    border: 1px solid var(--light-tertiary-color) !important;
+  }
+}
+
+/* Dark mode primary button */
+body.vscode-dark .btn-primary {
+  background-color: var(--dark-primary-color);
+  color: var(--dark-text);
+  border: 1px solid var(--dark-primary-color);
+
+  &:hover {
+    color: var(--dark-text);
+    background-color: var(--secondary-color);
+    border: 1px solid var(--secondary-color);
+  }
+
+  &:active {
+    color: var(--light-text);
+    background-color: var(--dark-tertiary-color) !important;
+    border: 1px solid var(--dark-tertiary-color) !important;
+  }
+}
+
+/* Light mode outline button */
+body.vscode-light .btn-outline-primary {
+  color: var(--light-primary-color);
+  border: 1px solid var(--light-primary-color);
+
+  &:hover {
+    color: var(--light-text);
+    background-color: var(--secondary-color);
+    border: 1px solid var(--secondary-color);
+  }
+
+  &:active {
+    color: var(--light-text);
+    background-color: var(--light-tertiary-color) !important;
+    border: 1px solid var(--light-tertiary-color) !important;
+  }
+}
+
+/* Dark mode outline button */
+body.vscode-dark .btn-outline-primary {
+  color: var(--dark-primary-color);
+  border: 1px solid var(--dark-primary-color);
+
+  &:hover {
+    color: var(--dark-text);
+    background-color: var(--secondary-color);
+    border: 1px solid var(--secondary-color);
+  }
+
+  &:active {
+    color: var(--light-text);
+    background-color: var(--dark-tertiary-color) !important;
+    border: 1px solid var(--dark-tertiary-color) !important;
+  }
 }
 
 #btnGroup2 {
@@ -118,71 +168,53 @@ body.vscode-light {
   align-items: center;
   width: 100%;
   padding-top: 0.5em;
+  padding-bottom: 0.7em;
   padding-right: 1em;
   position: fixed;
   bottom: 0em;
   right: 0em;
 }
 
-h1 {
-  font-size: 1.5em;
-  font-weight: bold;
+#deleteBtn {
+  margin-right: 0.5em;
 }
 
-h2 {
-  font-size: 1em;
-  font-weight: bold;
+#overviewBtn {
+  margin-bottom: 0.5em;
 }
 
-h2 {
-  font-size: 1em;
-  font-weight: bold;
+/* FOR INLINE COMMENTS */
+#commentData {
+  margin: 0 0.2em;
 }
 
-h3 {
-  font-size: 0.8em;
-  font-weight: 600;
+#commentTitle,
+#commentText {
+  margin: 0.2em;
+  padding: 0.5em;
+  width: 98%;
 }
 
-#rubricDescription {
-  font-size: 0.7em;
-}
-
-input[class="btn-check"]:checked + label {
-  background-color: var(--primary-color) !important;
-  color: black !important;
-  border-color: var(--secondary-color) !important;
-}
-
-input[class="btn-check"]:hover + label {
-  background-color: var(--secondary-color) !important;
-  color: white !important;
-  border-color: var(--secondary-color) !important;
-}
-
-.flex-container,
-#priority-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
+#commentTitle {
+  margin-bottom: 1em;
 }
 
 #priority-container {
-  margin: 1.7em 0;
+  margin: 0.5em 0;
   flex-direction: column;
 }
 
-.radio-button-group {
+.priority-button-group {
   max-width: 100%;
-  margin-top: 0.2em;
+  margin: 0.2em 0;
   display: flex;
 }
 
-/* Radio buttons for priority in inline comments */
-.priority-button-group {
+.priority-icon {
   max-width: 100%;
-  margin-top: 0.2em;
-  display: flex;
+  max-height: 100%;
+  width: auto;
+  height: auto;
 }
 
 #priority-buttons {
@@ -213,7 +245,7 @@ input[class="btn-check"]:hover + label {
 }
 
 .priority-icon {
-  filter: grayscale(80%);
+  filter: contrast(0%);
 }
 
 /* Shows colour of chosen priority */
@@ -221,8 +253,9 @@ input[name="priority"]:checked + .priority-icon {
   filter: grayscale(0%);
 }
 
+/* FOR GENERAL COMMENTS */
 .rubric {
-  padding: 0.5em;
+  padding: 0.1em 0.5em;
   border: 0.5px solid #525252;
 }
 
@@ -236,28 +269,35 @@ body.vscode-dark #rubricContainer .rubric {
   background-color: #272822;
 }
 
-.bi-search {
-  color: var(--primary-color);
+.commentBox {
+  display: flex;
+  flex-direction: column;
+  width: 98%;
 }
 
-textarea {
-  width: 100%;
-  height: 8em;
-  padding: 0.3em;
+#rubricDescription {
+  font-size: 0.7em;
+  line-height: 1.5;
 }
 
-input {
-  margin-bottom: 1em;
-  padding: 1%;
-  width: 100%;
+#innerRubric {
+  margin-left: 0.3em;
+  margin-right: 0.3em;
 }
 
-#deleteBtn {
-  margin-right: 0.5em;
+body.vscode-dark .bi-search {
+  color: var(--dark-primary-color);
 }
 
-#overviewBtn {
-  margin-bottom: 0.5em;
+body.vscode-light .bi-search {
+  color: var(--light-primary-color);
+}
+
+.flex-container,
+#priority-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .saveDiv {
@@ -280,14 +320,17 @@ input {
 .container {
   display: block;
   position: relative;
-  padding-left: 18px;
-  margin-bottom: 12px;
   cursor: pointer;
-  font-size: 13px;
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
-  user-select: none;
+  padding-left: 1.5em;
+  padding-right: 1.3em;
+  padding-bottom: 1.5em;
+  font-size: 0.75em;
+}
+
+.radio-button-group {
+  max-width: 100%;
+  margin-top: 0.2em;
+  display: flex;
 }
 
 .container .radio-button {
@@ -331,12 +374,17 @@ input {
   width: 50%;
   height: 50%;
   border-radius: 50%;
-  background: var(--primary-color);
+  background: var(--dark-primary-color);
 }
 
-@media (max-width: 235px) {
+/* Media queries */
+@media (max-width: 250px) {
   .radio-button-group {
     flex-direction: column;
+  }
+
+  .container {
+    margin-bottom: 1em;
   }
 }
 

@@ -82,7 +82,7 @@ export class GeneralViewProvider implements WebviewViewProvider {
     const savedComments = fileData.generalComments;
 
     rubrics.rubrics = Array.from(rubrics.rubrics);
-    
+
     rubrics.rubrics.forEach((rubric: any) => {
       let rubricId = Number(rubric.id);
       let commentText = "";
@@ -105,7 +105,8 @@ export class GeneralViewProvider implements WebviewViewProvider {
       }
 
       content += `<div class="rubric" data-rubric-id="${rubricId}">
-      <h3 id="rubricTitle">
+      <div id="innerRubric">
+      <h2 id="rubricTitle">
         <svg
           xmlns="http://www.w3.org/2000/svg"
           width="13"
@@ -119,7 +120,7 @@ export class GeneralViewProvider implements WebviewViewProvider {
           />
         </svg>
         ${rubric.title}
-      </h3>
+      </h2>
       <p id="rubricDescription">
         ${rubric.description}
       </p>
@@ -130,7 +131,7 @@ export class GeneralViewProvider implements WebviewViewProvider {
         rows="4"
       >${commentText}</textarea
       ><br />
-      `;
+      </div>`;
       if (rubric.has_score === "true") {
         content += `<div class="flex-container">
         <div class="radio-button-group">`;

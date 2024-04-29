@@ -33,7 +33,7 @@ import {
 } from "./utils/comment-utils";
 import {
   highPriorityIconUri,
-  initializeIconUris,
+  initialiseIconUris,
   lowPriorityIconUri,
   mediumPriorityIconUri,
 } from "./assets/icon-uris";
@@ -54,6 +54,8 @@ export const GENERAL_COMMENTS_FILE = "general-comments.json";
 let generalViewProvider: GeneralViewProvider;
 let panel: WebviewPanel;
 const viewId = "collabrate-inline";
+let isFirstWebviewPanel: boolean = true;
+let webviewPanelHtml: string;
 
 export async function activate(context: ExtensionContext) {
   treeDataProvider = new InlineCommentItemProvider();
@@ -64,15 +66,26 @@ export async function activate(context: ExtensionContext) {
   icon = window.createTextEditorDecorationType({
     after: {
       contentIconPath: context.asAbsolutePath(
-        path.join("src", "assets", "comment.svg")
+        path.join("src", "assets", "dark-comment.svg")
       ),
       margin: "5px",
     },
+    dark: {
+      after: {
+        contentIconPath: context.asAbsolutePath(
+          path.join("src", "assets", "light-comment.svg")
+        ),
+        margin: "5px",
+      },
+    },
   });
   highlight = window.createTextEditorDecorationType({
-    backgroundColor: "#8CBEB260",
+    backgroundColor: "#4e4aa150",
+    dark: {
+      backgroundColor: "#cd7cff50",
+    },
   });
-  initializeIconUris(context);
+  initialiseIconUris(context);
 
   // Makes JSON files if they don't already exist
   const commentsJson = getFilePath(INLINE_COMMENTS_FILE);
@@ -140,7 +153,7 @@ export async function activate(context: ExtensionContext) {
   context.subscriptions.push(
     commands.registerCommand(
       "extension.showCommentSidebar",
-      (comment?: InlineComment) => {
+      async (comment?: InlineComment) => {
         if (panel) {
           panel.dispose();
         }
@@ -154,56 +167,33 @@ export async function activate(context: ExtensionContext) {
           }
         );
 
-        const webviewPath = Uri.joinPath(
-          context.extensionUri,
-          "src/inline-comment.html"
-        );
-        const cssUri = panel.webview.asWebviewUri(
-          Uri.joinPath(context.extensionUri, "src/styles/style.css")
-        );
-        const webviewLowPriorityIcon = panel.webview
-          .asWebviewUri(lowPriorityIconUri)
-          .toString();
-        const webviewMediumPriorityIcon = panel.webview
-          .asWebviewUri(mediumPriorityIconUri)
-          .toString();
-        const webviewHighPriorityIcon = panel.webview
-          .asWebviewUri(highPriorityIconUri)
-          .toString();
+        if (isFirstWebviewPanel) {
+          await initialiseWebviewPanel(context);
+          isFirstWebviewPanel = false;
+        }
 
-        fs.promises
-          .readFile(webviewPath.fsPath, "utf-8")
-          .then((data) => {
-            // Get values from clicked comment
-            const commentText = comment?.comment || "";
-            const title = comment?.title || "";
-            const commentId = comment?.id || "";
-            const priority = comment?.priority || "";
+        if (webviewPanelHtml) {
+          // Get values from clicked comment
+          const commentText = comment?.comment || "";
+          const title = comment?.title || "";
+          const commentId = comment?.id || "";
+          const priority = comment?.priority || "";
 
-            // Shows the comment's value in the webview HTML
-            let htmlContent = data
-              .replace("${cssUri}", cssUri.toString())
-              .replace("${commentText}", commentText)
-              .replace("${commentId}", commentId.toString())
-              .replace("${commentTitle}", title)
-              .replace("${lowPriorityIconUri}", webviewLowPriorityIcon)
-              .replace("${mediumPriorityIconUri}", webviewMediumPriorityIcon)
-              .replace("${highPriorityIconUri}", webviewHighPriorityIcon);
+          // Shows the comment's value in the webview HTML
+          let htmlContent = webviewPanelHtml
+            .replace("${commentText}", commentText)
+            .replace("${commentId}", commentId.toString())
+            .replace("${commentTitle}", title);
 
-            if (priority) {
-              htmlContent = htmlContent.replace(
-                `value="${priority}"`,
-                `value="${priority}" checked`
-              );
-            }
-
-            panel.webview.html = htmlContent;
-          })
-          .catch((error) => {
-            window.showErrorMessage(
-              `Error reading HTML file: ${error.message}`
+          if (priority) {
+            htmlContent = htmlContent.replace(
+              `value="${priority}"`,
+              `value="${priority}" checked`
             );
-          });
+          }
+
+          panel.webview.html = htmlContent;
+        }
 
         panel.webview.onDidReceiveMessage(
           handleMessageFromWebview,
@@ -334,6 +324,39 @@ export function handleMessageFromWebview(message: any) {
 export function emptyDecoration() {
   iconDecoration = [];
   highlightDecoration = [];
+}
+
+function initialiseWebviewPanel(context: ExtensionContext) {
+  const webviewPath = Uri.joinPath(
+    context.extensionUri,
+    "src/inline-comment.html"
+  );
+  const cssUri = panel.webview.asWebviewUri(
+    Uri.joinPath(context.extensionUri, "src/styles/style.css")
+  );
+  const webviewLowPriorityIcon = panel.webview
+    .asWebviewUri(lowPriorityIconUri)
+    .toString();
+  const webviewMediumPriorityIcon = panel.webview
+    .asWebviewUri(mediumPriorityIconUri)
+    .toString();
+  const webviewHighPriorityIcon = panel.webview
+    .asWebviewUri(highPriorityIconUri)
+    .toString();
+
+  return fs.promises
+    .readFile(webviewPath.fsPath, "utf-8")
+    .then((html) => {
+      webviewPanelHtml = html
+        .replace("${cssUri}", cssUri.toString())
+        .replace("${lowPriorityIconUri}", webviewLowPriorityIcon)
+        .replace("${mediumPriorityIconUri}", webviewMediumPriorityIcon)
+        .replace("${highPriorityIconUri}", webviewHighPriorityIcon);
+    })
+    .catch((error) => {
+      console.error("Error reading HTML file:", error);
+      throw error;
+    });
 }
 
 export function deactivate() {
