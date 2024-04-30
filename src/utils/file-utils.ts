@@ -9,9 +9,9 @@ import {
 } from "../extension";
 import { GeneralComment, InlineComment } from "../comment";
 import { Selection, Uri, window, workspace } from "vscode";
+import { convertToGeneralComment, getCommentFromRubric } from "./comment-utils";
 
 import path from "path";
-import { convertToGeneralComment, getCommentFromRubric } from "./comment-utils";
 
 /**
  * Reads contents of a given JSON file
@@ -192,11 +192,11 @@ async function saveGeneralComments(
 ) {
   const jsonFilePath = getFilePath(GENERAL_COMMENTS_FILE);
   try {
-    const commentsToSave: GeneralComment[] = convertToGeneralComment(generalComments);
+    const commentsToSave: GeneralComment[] =
+      convertToGeneralComment(generalComments);
     const updatedData = { generalComments: commentsToSave };
     const generalCommentsJson = JSON.stringify(updatedData);
     await fs.promises.writeFile(jsonFilePath, generalCommentsJson);
-
   } catch (error: any) {
     window.showErrorMessage(`Error saving to file: ${error.message}`);
     return;
@@ -207,7 +207,9 @@ async function saveGeneralComments(
  * Saves a new draft of general comments in a JSON file
  * @param {{ comment: string; score?: number; rubricId: number }[]} generalComments The comments to save.
  */
-export async function saveDraft(generalComments: { comment: string; score?: number; rubricId: number }[]) {
+export async function saveDraft(
+  generalComments: { comment: string; score?: number; rubricId: number }[]
+) {
   saveGeneralComments(generalComments);
 }
 
@@ -215,40 +217,44 @@ export async function saveDraft(generalComments: { comment: string; score?: numb
  * Submits the entire review
  * @param {{ comment: string; score?: number; rubricId: number }[]} generalComments The comments to submit.
  */
-export async function submitReview(generalComments: { comment: string; score?: number; rubricId: number }[]) {
+export async function submitReview(
+  generalComments: { comment: string; score?: number; rubricId: number }[]
+) {
   try {
     saveGeneralComments(generalComments);
     const rubricsData = await readFromFile(getFilePath("rubrics.json"));
     const rubrics = Array.from(rubricsData.rubrics);
     let emptyRubric = false;
-    await Promise.all(rubrics.map(async (rubric: any) => {
-      let rubricId = Number(rubric.id);
-      const comment = await getCommentFromRubric(rubricId);
-      if (comment === undefined) {
+    await Promise.all(
+      rubrics.map(async (rubric: any) => {
+        let rubricId = Number(rubric.id);
+        const comment = await getCommentFromRubric(rubricId);
+        if (comment === undefined) {
           emptyRubric = true;
-          window.showErrorMessage("You have not written a comment and/or given a score for some of the general comment rubrics. To fill in these, select the CollabRate icon in the activity bar on the far left.");
-      }
-    }));
+          window.showErrorMessage(
+            "You have not written a comment and/or given a score for some of the general comment rubrics. To fill in these, select the CollabRate icon in the activity bar on the far left."
+          );
+        }
+      })
+    );
 
     if (!emptyRubric) {
       window
-      .showWarningMessage(
-        "Are you sure you want to submit your review? This cannot be undone.",
-        ...["Yes", "No"]
-      )
-      .then(async (answer) => {
-        if (answer === "Yes") {
-          deactivate();
-          window.showInformationMessage("Review successfully submitted.");
-        }
-      });
+        .showWarningMessage(
+          "Are you sure you want to submit your review? This cannot be undone.",
+          ...["Yes", "No"]
+        )
+        .then(async (answer) => {
+          if (answer === "Yes") {
+            deactivate();
+            window.showInformationMessage("Review successfully submitted.");
+          }
+        });
     }
-
   } catch (error) {
     window.showErrorMessage(`Error submitting review: ${error}`);
     return;
   }
-  
 }
 
 /**

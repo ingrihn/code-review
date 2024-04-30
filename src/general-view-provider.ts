@@ -43,12 +43,12 @@ export class GeneralViewProvider implements WebviewViewProvider {
       "src",
       "general-comments.html"
     );
-    const loadingIconPath = webviewView.webview.asWebviewUri(Uri.joinPath(this._extensionUri, "src",
-    "assets",
-    "loadingIcon.gif"));
-    const checkmarkPath = webviewView.webview.asWebviewUri(Uri.joinPath(this._extensionUri, "src",
-    "assets",
-    "checkmark.svg"));
+    const loadingIconPath = webviewView.webview.asWebviewUri(
+      Uri.joinPath(this._extensionUri, "src", "assets", "loading-icon.gif")
+    );
+    const checkmarkPath = webviewView.webview.asWebviewUri(
+      Uri.joinPath(this._extensionUri, "src", "assets", "checkmark.svg")
+    );
 
     try {
       const [data, rubricsJson] = await Promise.all([
@@ -105,7 +105,6 @@ export class GeneralViewProvider implements WebviewViewProvider {
       }
 
       content += `<div class="rubric" data-rubric-id="${rubricId}">
-      <div id="innerRubric">
       <h2 id="rubricTitle">
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -130,8 +129,7 @@ export class GeneralViewProvider implements WebviewViewProvider {
         cols="40"
         rows="4"
       >${commentText}</textarea
-      ><br />
-      </div>`;
+      ><br />`;
       if (rubric.has_score === "true") {
         content += `<div class="flex-container">
         <div class="radio-button-group">`;
