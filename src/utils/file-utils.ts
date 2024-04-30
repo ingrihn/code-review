@@ -12,6 +12,7 @@ import { Selection, Uri, window, workspace } from "vscode";
 import { convertToGeneralComment, getCommentFromRubric } from "./comment-utils";
 
 import path from "path";
+import { GeneralViewProvider } from "../general-view-provider";
 
 /**
  * Reads contents of a given JSON file
@@ -214,11 +215,12 @@ export async function saveDraft(
 }
 
 /**
- * Submits the entire review
+ * Submits the entire review with all inline and general comments
  * @param {{ comment: string; score?: number; rubricId: number }[]} generalComments The comments to submit.
+ * @param {GeneralViewProvider} generalViewProvider The provider of the webview view for general comments.
  */
 export async function submitReview(
-  generalComments: { comment: string; score?: number; rubricId: number }[]
+  generalComments: { comment: string; score?: number; rubricId: number }[], generalViewProvider: GeneralViewProvider
 ) {
   try {
     saveGeneralComments(generalComments);
@@ -246,6 +248,7 @@ export async function submitReview(
         )
         .then(async (answer) => {
           if (answer === "Yes") {
+            generalViewProvider.setDisplayRubrics(false);
             deactivate();
             window.showInformationMessage("Review successfully submitted.");
           }

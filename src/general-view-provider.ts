@@ -15,13 +15,26 @@ export class GeneralViewProvider implements WebviewViewProvider {
   public static readonly viewType = "collabrate-general";
   private _view?: WebviewView;
   private _extensionUri: Uri;
+  private displayRubrics: boolean;
 
   constructor(extensionUri: Uri) {
     this._extensionUri = extensionUri;
+    this.displayRubrics = true;
   }
 
   public getView(): WebviewView | undefined {
     return this._view;
+  }
+
+  public setDisplayRubrics(shouldDisplay: boolean) {
+    if (shouldDisplay !== this.displayRubrics) {
+      this.displayRubrics = shouldDisplay;
+      this._view?.webview.postMessage("hideRubrics");
+    }
+  }
+
+  public getDisplayRubrics(): boolean {
+    return this.displayRubrics;
   }
 
   public async resolveWebviewView(
@@ -34,6 +47,10 @@ export class GeneralViewProvider implements WebviewViewProvider {
     webviewView.webview.options = {
       enableScripts: true,
     };
+
+    if (!this.displayRubrics) {
+      webviewView.webview.postMessage("hideRubrics");
+    }
 
     const cssUri = webviewView.webview.asWebviewUri(
       Uri.joinPath(this._extensionUri, "src", "styles", "style.css")

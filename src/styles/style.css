@@ -214,6 +214,10 @@ button {
   margin-bottom: 1em;
 }
 
+#submitText {
+  font-size: 0.8em;
+}
+
 #priority-container {
   margin: 0.5em 0;
   flex-direction: column;

@@ -8,6 +8,7 @@
   </head>
   <body>
     <h1>General comments</h1>
+    <p id="submitText">Code review is submitted!</p>
     <div id="rubricContainer">${rubrics}</div>
     <br />
     <div id="btnGroup">
@@ -44,10 +45,14 @@
       const savingDiv = document.getElementById("savingDiv");
       const loadingIcon = document.getElementById("loadingIcon");
       const savingText = document.getElementById("savingText");
+      const rubricContainer = document.getElementById("rubricContainer");
+      const btnGroup = document.getElementById("btnGroup");
+      const submitText = document.getElementById("submitText");
 
       savedDiv.style.display = "none";
       loadingIcon.style.display = "none";
       savingText.style.display = "none";
+      submitText.style.display = "none";
 
       function getGeneralComments() {
         let rubrics = document.getElementsByClassName("rubric");
@@ -106,6 +111,10 @@
         const message = event.data;
         if (message === "getGeneralCommentsSubmit") {
           submitReview();
+        } else if (message === "hideRubrics") {
+          rubricContainer.style.display = "none";
+          btnGroup.style.display = "none";
+          submitText.style.display = "block";
         }
       });
 

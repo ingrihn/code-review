@@ -246,21 +246,25 @@ export async function activate(context: ExtensionContext) {
   // Register command for submitting all comments
   context.subscriptions.push(
     commands.registerCommand("extension.submitReview", async () => {
-      if (
-        generalViewProvider.getView() !== undefined &&
-        generalViewProvider.getView()?.visible
-      ) {
-        generalViewProvider
-          .getView()!
-          .webview.postMessage("getGeneralCommentsSubmit");
+      if (generalViewProvider.getDisplayRubrics()) {
+        if (
+          generalViewProvider.getView() !== undefined &&
+          generalViewProvider.getView()?.visible
+        ) {
+          generalViewProvider
+            .getView()!
+            .webview.postMessage("getGeneralCommentsSubmit");
+        } else {
+          const generalComments = await getGeneralComments();
+          const commentsToSave: {
+            comment: string;
+            score?: number;
+            rubricId: number;
+          }[] = convertFromGeneralComment(generalComments);
+          submitReview(commentsToSave, generalViewProvider);
+        }
       } else {
-        const generalComments = await getGeneralComments();
-        const commentsToSave: {
-          comment: string;
-          score?: number;
-          rubricId: number;
-        }[] = convertFromGeneralComment(generalComments);
-        submitReview(commentsToSave);
+        window.showInformationMessage("You have already submitted your review");
       }
     })
   );
@@ -310,7 +314,7 @@ export function handleMessageFromWebview(message: any) {
       break;
     case "submitReview":
       const generalCommentsData = message.data;
-      submitReview(generalCommentsData);
+      submitReview(generalCommentsData, generalViewProvider);
       break;
     case "showOverview":
       commands.executeCommand("extension.showOverview");
