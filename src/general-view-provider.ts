@@ -143,8 +143,6 @@ export class GeneralViewProvider implements WebviewViewProvider {
       <textarea
         class="commentBox"
         placeholder="Skriv her."
-        cols="40"
-        rows="4"
       >${commentText}</textarea
       ><br />`;
       if (rubric.has_score === "true") {

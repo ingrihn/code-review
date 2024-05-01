@@ -82,7 +82,7 @@ export async function activate(context: ExtensionContext) {
   highlight = window.createTextEditorDecorationType({
     backgroundColor: "#4e4aa150",
     dark: {
-      backgroundColor: "#cd7cff50",
+      backgroundColor: "#cd7cff30",
     },
   });
   initialiseIconUris(context);

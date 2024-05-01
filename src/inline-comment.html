@@ -132,7 +132,7 @@
         };
 
         if (checkedPriority) {
-          comment.priority = parseInt(checkedPriority.value);
+          comment.priority = Number(checkedPriority.value);
         }
 
         vscode.postMessage({ command: "saveComment", data: comment });
@@ -141,7 +141,7 @@
       function deleteComment() {
         vscode.postMessage({
           command: "deleteComment",
-          id: parseInt(commentId),
+          id: Number(commentId),
         });
       }
 
@@ -153,12 +153,17 @@
         const newPriority = document.querySelector(
           'input[name="priority"]:checked'
         );
+
         const newComment = {
-          id: parseInt(newCommentId),
+          id: Number(newCommentId),
           title: newTitle,
           text: newCommentText,
-          priority: parseInt(newPriority.value),
         };
+
+        if (newPriority) {
+          newComment.priority = Number(newPriority.value);
+        }
+
         vscode.postMessage({ command: "updateComment", data: newComment });
       }
 
