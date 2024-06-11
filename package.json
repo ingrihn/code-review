@@ -1,7 +1,7 @@
 {
-  "name": "collabrate",
-  "displayName": "CollabRate",
-  "description": "This is the README for your extension \"collabrate\". After writing up a brief description, we recommend including the following sections.",
+  "name": "reviewify",
+  "displayName": "Reviewify",
+  "description": "\"Reviewify\" is a code review tool enabling users to insert both inline comments directly in the code and general comments based on predefined guidelines.",
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.86.0"
@@ -10,26 +10,25 @@
     "Other"
   ],
   "activationEvents": [
-    "onDidChangeActiveTextEditor",
     "onStartupFinished"
   ],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
       {
-        "command": "extension.showCommentSidebar",
-        "title": "✏️ CollabRate: Add Inline Comment"
+        "command": "reviewify.showCommentSidebar",
+        "title": "✏️ Reviewify: Add Inline Comment"
       },
       {
-        "command": "extension.navigateToComment",
+        "command": "reviewify.navigateToComment",
         "title": "Tree View Comment"
       },
       {
-        "command": "extension.showOverview",
+        "command": "reviewify.showOverview",
         "title": "Inline Comments"
       },
       {
-        "command": "extension.submitReview",
+        "command": "reviewify.submitReview",
         "title": "Submit Review"
       }
     ],
@@ -37,7 +36,7 @@
       "editor/context": [
         {
           "when": "resourceScheme == 'file'",
-          "command": "extension.showCommentSidebar",
+          "command": "reviewify.showCommentSidebar",
           "group": "1_modification"
         }
       ]
@@ -46,7 +45,7 @@
       "activitybar": [
         {
           "id": "activity-bar",
-          "title": "CollabRate",
+          "title": "Reviewify",
           "icon": "$(feedback)"
         }
       ],
@@ -62,21 +61,21 @@
       "activity-bar": [
         {
           "type": "webview",
-          "id": "collabrate-general",
+          "id": "reviewify-general",
           "name": "General Comments"
         }
       ],
       "panel": [
         {
-          "id": "collabrate-inline",
+          "id": "reviewify-inline",
           "name": "Inline comments"
         }
       ]
     },
     "viewsWelcome": [
       {
-        "view": "collabrate-inline",
-        "contents": "No inline comments found. Create a new comment by highlighting the relevant code lines, right-clicking and choosing \n\"Collabrate: Add Comment\"\n"
+        "view": "reviewify-inline",
+        "contents": "No inline comments found. Create a new comment by highlighting the relevant code lines, right-clicking and choosing \n\"✏️ Reviewify: Add Inline Comment\"\n"
       }
     ]
   },
@@ -99,10 +98,7 @@
     "eslint": "^8.56.0",
     "typescript": "^5.3.3"
   },
-  "dependencies": {
-    "bootstrap": "^5.3.2",
-    "fast-csv": "^5.0.1"
-  },
+  "dependencies": {},
   "directories": {
     "lib": "lib"
   },

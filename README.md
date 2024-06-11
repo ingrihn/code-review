@@ -1,6 +1,6 @@
-# ✏️ CollabRate
+# ✏️ Reviewify
 
-CollabRate is a Visual Studio Code extension that enables users to perform code reviews by writing inline and general comments directly in the editor. By co-locating these functions, we streamline the feedback process and provide a seamless experience.
+Reviewify is a Visual Studio Code extension that enables users to perform code reviews by writing inline and general comments directly in the editor. By co-locating these functions, we streamline the feedback process and provide a seamless experience.
 
 ## Startup
 
@@ -15,7 +15,7 @@ This will open a new editor where you can select the project you wish to review.
 Inline comments are helpuful for directly linking your comment with the relevant lines of code.
 
 1. Highlight the code line(s) you want to comment on.
-2. Right-click and select _✏️ CollabRate: Add Comment_.
+2. Right-click and select _✏️ Reviewify: Add Inline Comment_.
 3. A webview panel will appear to the right. Insert a title and a comment.
 4. Click on _Save_ when you are satisfied.
 
@@ -34,7 +34,7 @@ Click within the highlighted range, and the webview panel will open to the right
 
 All inline comments are conveniently listed in one place for easier management.
 
-1. Click on _CollabRate_ (comment icon) in the Activity Bar. A tree view will open to the bottom left and the inline comments will be grouped by file under _Inline comments_.
+1. Click on _Reviewify_ (comment icon) in the Activity Bar. A tree view will open to the bottom left and the inline comments will be grouped by file under _Inline comments_.
 2. Click on a comment to open the corresponding file and navigate to the comment. The comment will also be shown in the webview panel to the right.
 
 ![Skjermbilde 2024-04-16 kl  10 13 45](https://github.com/ingrihn/code-review/assets/54781143/af69a258-2a07-467c-9726-5366bd812d39)
@@ -42,7 +42,7 @@ All inline comments are conveniently listed in one place for easier management.
 
 ## General comments
 
-To address issues that touch upon several files/themes, users can add general comments based on pre-defined rubrics. Click on _CollabRate_ (comment icon) in the Activity Bar to open the webview view on the left under _General comments_.
+To address issues that touch upon several files/themes, users can add general comments based on pre-defined rubrics. Click on _Reviewify_ (comment icon) in the Activity Bar to open the webview view on the left under _General comments_.
 
 ![Skjermbilde 2024-04-16 kl  10 06 31](https://github.com/ingrihn/code-review/assets/54781143/d31a0dfc-d7b1-4740-b23b-99f653de9742)
 

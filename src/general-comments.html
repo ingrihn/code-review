@@ -41,6 +41,7 @@
 
     <script>
       const vscode = acquireVsCodeApi();
+
       const savedDiv = document.getElementById("savedDiv");
       const savingDiv = document.getElementById("savingDiv");
       const loadingIcon = document.getElementById("loadingIcon");
@@ -54,6 +55,7 @@
       savingText.style.display = "none";
       submitText.style.display = "none";
 
+      // Gets the user input from each rubric
       function getGeneralComments() {
         let rubrics = document.getElementsByClassName("rubric");
         rubrics = Array.from(rubrics);
@@ -107,6 +109,7 @@
         });
       }
 
+      // Calls the submitReview() function if the status bar item is clicked
       window.addEventListener("message", (event) => {
         const message = event.data;
         if (message === "getGeneralCommentsSubmit") {
@@ -130,6 +133,7 @@
         savingText.style.display = "inline";
       }
 
+      // Saves the text input after 1 second
       commentBoxes.forEach((commentBox) => {
         let timeout;
         commentBox.addEventListener("input", () => {
@@ -139,6 +143,7 @@
         });
       });
 
+      // Saves the radio button selection after 1 second
       radioBtns.forEach((radioBtn) => {
         let timeout;
         radioBtn.addEventListener("change", () => {

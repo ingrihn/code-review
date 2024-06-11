@@ -4,11 +4,12 @@ import {
   DecorationOptions,
   ExtensionContext,
   Position,
-  Range,
   StatusBarAlignment,
+  StatusBarItem,
   TextEditor,
   TextEditorDecorationType,
   TextEditorSelectionChangeEvent,
+  TreeView,
   Uri,
   ViewColumn,
   WebviewPanel,
@@ -17,19 +18,19 @@ import {
 } from "vscode";
 import {
   checkIfFileExists,
-  deleteComment,
+  deleteInlineComment,
   getFilePath,
   getRelativePath,
-  saveComment,
+  saveInlineComment,
   saveDraft,
   submitReview,
   updateComment,
 } from "./utils/file-utils";
 import {
   convertFromGeneralComment,
-  getComment,
+  getInlineComment,
   getGeneralComments,
-  showComments,
+  showInlineComments,
 } from "./utils/comment-utils";
 import {
   highPriorityIconUri,
@@ -42,6 +43,7 @@ import { GeneralViewProvider } from "./general-view-provider";
 import { InlineComment } from "./comment";
 import { InlineCommentItemProvider } from "./inline-comment-item-provider";
 import path from "path";
+import { InlineCommentItem } from "./inline-comment-item";
 
 export let activeEditor: TextEditor;
 export let treeDataProvider: InlineCommentItemProvider;
@@ -53,16 +55,22 @@ export const INLINE_COMMENTS_FILE = "inline-comments.json";
 export const GENERAL_COMMENTS_FILE = "general-comments.json";
 let generalViewProvider: GeneralViewProvider;
 let panel: WebviewPanel;
-const viewId = "collabrate-inline";
+const viewId = "reviewify-inline";
 let isFirstWebviewPanel: boolean = true;
 let webviewPanelHtml: string;
+let treeView: TreeView<InlineCommentItem>;
+let submitItem: StatusBarItem;
 
+/**
+ * Defines the extension's core functionality.
+ * @param {ExtensionContext} context - The context in which the extension is activated.
+ */
 export async function activate(context: ExtensionContext) {
   treeDataProvider = new InlineCommentItemProvider();
   generalViewProvider = new GeneralViewProvider(context.extensionUri);
   activeEditor = window.activeTextEditor ?? window.visibleTextEditors[0];
 
-  // Declare icons
+  // Declares icons
   icon = window.createTextEditorDecorationType({
     after: {
       contentIconPath: context.asAbsolutePath(
@@ -82,22 +90,22 @@ export async function activate(context: ExtensionContext) {
   highlight = window.createTextEditorDecorationType({
     backgroundColor: "#4e4aa150",
     dark: {
-      backgroundColor: "#cd7cff30",
+      backgroundColor: "#cd7cff50",
     },
   });
   initialiseIconUris(context);
 
-  // Makes JSON files if they don't already exist
-  const commentsJson = getFilePath(INLINE_COMMENTS_FILE);
+  // Creates JSON files if they do not already exist
+  const inlineCommentsJson = getFilePath(INLINE_COMMENTS_FILE);
   const generalCommentsJson = getFilePath(GENERAL_COMMENTS_FILE);
   const rubricsJson = getFilePath("rubrics.json");
-  if (checkIfFileExists(commentsJson, "inlineComments")) {
-    showComments(commentsJson);
+  if (checkIfFileExists(inlineCommentsJson, "inlineComments")) {
+    showInlineComments(inlineCommentsJson);
   }
   checkIfFileExists(generalCommentsJson, "generalComments");
   checkIfFileExists(rubricsJson, "rubrics");
 
-  // Register provider for the webview view and show it every time it is opened
+  // Registers provider for the webview view and shows it every time it is opened
   context.subscriptions.push(
     window.registerWebviewViewProvider(GeneralViewProvider.viewType, {
       resolveWebviewView: async (webviewView, _context, _token) => {
@@ -129,16 +137,16 @@ export async function activate(context: ExtensionContext) {
     })
   );
 
-  // Create tree view in the panel
-  const treeView = window.createTreeView(viewId, {
+  // Creates tree view in the panel
+  treeView = window.createTreeView(viewId, {
     treeDataProvider,
     showCollapseAll: true,
     canSelectMany: false,
   });
 
-  // Register command to show the tree view when executed
+  // Registers command to show the tree view when executed
   context.subscriptions.push(
-    commands.registerCommand("extension.showOverview", () => {
+    commands.registerCommand("reviewify.showOverview", () => {
       treeDataProvider.getFirstElement().then((firstElement) => {
         if (firstElement) {
           treeView.reveal(firstElement, { select: false, focus: false });
@@ -147,12 +155,12 @@ export async function activate(context: ExtensionContext) {
     })
   );
 
-  commands.executeCommand("extension.showOverview");
+  commands.executeCommand("reviewify.showOverview");
 
   // Shows the webview panel
   context.subscriptions.push(
     commands.registerCommand(
-      "extension.showCommentSidebar",
+      "reviewify.showCommentSidebar",
       async (comment?: InlineComment) => {
         if (panel) {
           panel.dispose();
@@ -167,19 +175,20 @@ export async function activate(context: ExtensionContext) {
           }
         );
 
+        // Initialises the webview panel's properties the first time it is opened
         if (isFirstWebviewPanel) {
           await initialiseWebviewPanel(context);
           isFirstWebviewPanel = false;
         }
 
         if (webviewPanelHtml) {
-          // Get values from clicked comment
+          // Gets values from clicked inline comment
           const commentText = comment?.comment || "";
           const title = comment?.title || "";
           const commentId = comment?.id || "";
           const priority = comment?.priority || "";
 
-          // Shows the comment's value in the webview HTML
+          // Shows the inline comment in the webview panel
           let htmlContent = webviewPanelHtml
             .replace("${commentText}", commentText)
             .replace("${commentId}", commentId.toString())
@@ -204,22 +213,22 @@ export async function activate(context: ExtensionContext) {
     )
   );
 
-  // Get right comments when changing files
+  // Retrieves relevant inline comments when changing file
   context.subscriptions.push(
     window.onDidChangeActiveTextEditor((editor: TextEditor | undefined) => {
-      if (editor && commentsJson) {
+      if (editor && inlineCommentsJson) {
         activeEditor = editor;
-        showComments(commentsJson);
+        showInlineComments(inlineCommentsJson);
       }
     })
   );
 
-  // Click on highlighted text to view comment in webview
+  // Shows inline comment in webview panel when clicking highlighted code
   context.subscriptions.push(
     window.onDidChangeTextEditorSelection(
       async (event: TextEditorSelectionChangeEvent) => {
-        const selection = event.selections[0];
         // Prevents unwanted behaviour with multi-selection
+        const selection = event.selections[0];
         if (
           activeEditor &&
           selection.anchor.isEqual(selection.active) &&
@@ -231,11 +240,11 @@ export async function activate(context: ExtensionContext) {
           );
 
           if (clickedHighlight) {
-            const comment: InlineComment | undefined = await getComment(
+            const comment: InlineComment | undefined = await getInlineComment(
               clickedHighlight.range
             );
             if (comment) {
-              commands.executeCommand("extension.showCommentSidebar", comment);
+              commands.executeCommand("reviewify.showCommentSidebar", comment);
             }
           }
         }
@@ -243,9 +252,9 @@ export async function activate(context: ExtensionContext) {
     )
   );
 
-  // Register command for submitting all comments
+  // Registers command for submitting a review
   context.subscriptions.push(
-    commands.registerCommand("extension.submitReview", async () => {
+    commands.registerCommand("reviewify.submitReview", async () => {
       if (generalViewProvider.getDisplayRubrics()) {
         if (
           generalViewProvider.getView() !== undefined &&
@@ -264,23 +273,23 @@ export async function activate(context: ExtensionContext) {
           submitReview(commentsToSave, generalViewProvider);
         }
       } else {
-        window.showInformationMessage("You have already submitted your review");
+        window.showInformationMessage("You have already submitted your review.");
       }
     })
   );
 
-  // Add submit button to status bar
-  const submitItem = window.createStatusBarItem(StatusBarAlignment.Left);
+  // Adds submit button to status bar
+  submitItem = window.createStatusBarItem(StatusBarAlignment.Left);
   submitItem.text = "$(feedback) " + "Submit review";
-  submitItem.tooltip = "Select when code review is finished";
-  submitItem.command = "extension.submitReview";
+  submitItem.tooltip = "Click when code review is finished";
+  submitItem.command = "reviewify.submitReview";
   submitItem.show();
   context.subscriptions.push(submitItem);
 }
 
 /**
  * Handles messages received from the webview panel or webview view.
- * @param {any} message - The message received from the webview.
+ * @param {any} message - The message received from the webview panel or webview view.
  */
 export function handleMessageFromWebview(message: any) {
   switch (message.command) {
@@ -289,7 +298,7 @@ export function handleMessageFromWebview(message: any) {
       const fileName = getRelativePath();
       const title = message.data.title;
       const priority = message.data.priority;
-      saveComment(
+      saveInlineComment(
         fileName,
         activeEditor.selection,
         title,
@@ -299,7 +308,7 @@ export function handleMessageFromWebview(message: any) {
       break;
     case "deleteComment":
       const { id: commentId } = message;
-      deleteComment(commentId);
+      deleteInlineComment(commentId);
       break;
     case "updateComment":
       const newCommentId = message.data.id;
@@ -317,20 +326,19 @@ export function handleMessageFromWebview(message: any) {
       submitReview(generalCommentsData, generalViewProvider);
       break;
     case "showOverview":
-      commands.executeCommand("extension.showOverview");
+      commands.executeCommand("reviewify.showOverview");
       break;
     default:
-      deactivate();
-      break; // Handle unknown command
+      break; // Handles unknown command
   }
 }
 
-export function emptyDecoration() {
-  iconDecoration = [];
-  highlightDecoration = [];
-}
-
-function initialiseWebviewPanel(context: ExtensionContext) {
+/**
+ * Sets the URIs for HTML, CSS, and icons for the webview panel.
+ * @param {ExtensionContext} context - The context in which the extension is running.
+ * @throws {unknown}
+ */
+async function initialiseWebviewPanel(context: ExtensionContext) {
   const webviewPath = Uri.joinPath(
     context.extensionUri,
     "src/inline-comment.html"
@@ -348,23 +356,46 @@ function initialiseWebviewPanel(context: ExtensionContext) {
     .asWebviewUri(highPriorityIconUri)
     .toString();
 
-  return fs.promises
-    .readFile(webviewPath.fsPath, "utf-8")
-    .then((html) => {
-      webviewPanelHtml = html
-        .replace("${cssUri}", cssUri.toString())
-        .replace("${lowPriorityIconUri}", webviewLowPriorityIcon)
-        .replace("${mediumPriorityIconUri}", webviewMediumPriorityIcon)
-        .replace("${highPriorityIconUri}", webviewHighPriorityIcon);
-    })
-    .catch((error) => {
-      console.error("Error reading HTML file:", error);
-      throw error;
-    });
+  try {
+    const html = await fs.promises
+      .readFile(webviewPath.fsPath, "utf-8");
+    webviewPanelHtml = html
+      .replace("${cssUri}", cssUri.toString())
+      .replace("${lowPriorityIconUri}", webviewLowPriorityIcon)
+      .replace("${mediumPriorityIconUri}", webviewMediumPriorityIcon)
+      .replace("${highPriorityIconUri}", webviewHighPriorityIcon);
+  } catch (error) {
+    console.error("Error reading HTML file:", error);
+    throw error;
+  }
 }
 
-export function deactivate() {
+export function disposePanel() {
   if (panel) {
     panel.dispose();
   }
+}
+
+export function emptyDecorations() {
+  iconDecoration = [];
+  highlightDecoration = [];
+}
+
+/**
+ * Cleans up resources when extension is deactivated.
+ */
+export function deactivate() {
+  disposePanel();
+  emptyDecorations();
+  if (activeEditor) {
+    activeEditor.setDecorations(icon, []);
+    activeEditor.setDecorations(highlight, []);
+  }
+  if (treeView) {
+    treeView.dispose();
+  }
+  if (submitItem) {
+    submitItem.dispose();
+  }
+  isFirstWebviewPanel = true;
 }

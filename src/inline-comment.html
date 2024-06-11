@@ -104,11 +104,11 @@
 
       const priorities = document.getElementsByName("priority");
 
-      // Autofocus on the text area
+      // Autofocus on the input area for the title
       const title = document.getElementById("commentTitle");
       title.focus();
 
-      // Hide delete and update button if adding a new comment
+      // Hide delete and update button if adding a new inline comment
       const commentId =
         document.getElementById("commentData").dataset.commentId;
       if (commentId === "") {

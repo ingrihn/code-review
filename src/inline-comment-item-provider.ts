@@ -27,7 +27,7 @@ import {
 import { INLINE_COMMENTS_FILE } from "./extension";
 import { InlineComment } from "./comment";
 import { InlineCommentItem } from "./inline-comment-item";
-import { getComment } from "./utils/comment-utils";
+import { getInlineComment } from "./utils/comment-utils";
 
 export class InlineCommentItemProvider
   implements TreeDataProvider<InlineCommentItem>
@@ -40,7 +40,7 @@ export class InlineCommentItemProvider
   > = this._onDidChangeTreeData.event;
 
   public constructor() {
-    commands.registerCommand("extension.navigateToComment", (item) =>
+    commands.registerCommand("reviewify.navigateToComment", (item) =>
       this.navigateToComment(item)
     );
   }
@@ -49,6 +49,12 @@ export class InlineCommentItemProvider
     return element;
   }
 
+  /**
+   * Retrieves the child elements for a given element in the tree view.
+   * If no element is provided, returns the root elements (file names).
+   * @param {InlineCommentItem} element - The parent element for which to get the children. If undefined, gets root elements.
+   * @returns {Promise<InlineCommentItem[]>} - A promise that resolves to an array of child elements.
+   */
   public async getChildren(
     element?: InlineCommentItem
   ): Promise<InlineCommentItem[]> {
@@ -111,7 +117,7 @@ export class InlineCommentItemProvider
             }
 
             commentItem.command = {
-              command: "extension.navigateToComment",
+              command: "reviewify.navigateToComment",
               title: commentItem.label,
               arguments: [commentItem],
             };
@@ -124,8 +130,8 @@ export class InlineCommentItemProvider
   }
 
   /**
-   * Navigates to the comment in its associated file and opens the webview panel for the comment
-   * @param {InlineCommentItem} commentItem The inline comment to navigate to.
+   * Navigates to the inline comment in its associated file and opens the webview panel for the comment.
+   * @param {InlineCommentItem} commentItem - The inline comment to navigate to.
    */
   private navigateToComment(commentItem: InlineCommentItem) {
     if (
@@ -148,9 +154,9 @@ export class InlineCommentItemProvider
         editor.selection = new Selection(position, position);
         let range = new Range(position, position);
         editor.revealRange(range);
-        const comment: InlineComment | undefined = await getComment(range);
+        const comment: InlineComment | undefined = await getInlineComment(range);
 
-        commands.executeCommand("extension.showCommentSidebar", comment);
+        commands.executeCommand("reviewify.showCommentSidebar", comment);
       });
     });
   }
@@ -162,6 +168,10 @@ export class InlineCommentItemProvider
     this._onDidChangeTreeData.fire();
   }
 
+  /**
+   * Retrieves the first element in the tree view, if it exists.
+   * @returns {Promise<InlineCommentItem | undefined>} - A promise that resolves to the first InlineCommentItem if it exists, otherwise undefined.
+   */
   public getFirstElement(): Promise<InlineCommentItem | undefined> {
     return new Promise((resolve) => {
       this.getChildren().then((children) => {
@@ -174,9 +184,14 @@ export class InlineCommentItemProvider
     });
   }
 
+  /**
+   * Retrieves the parent of the given element in the tree view.
+   * @param {InlineCommentItem} element - The element for which to get the parent.
+   * @returns {Thenable<InlineCommentItem | undefined>} - A promise that resolves to undefined.
+   */
   public getParent(
     element: InlineCommentItem
   ): Thenable<InlineCommentItem | undefined> {
-    return Promise.resolve(undefined); // Since there are no hierarchical relationships, always return undefined
+    return Promise.resolve(undefined); // Return undefined since there are no hierarchical relationships
   }
 }

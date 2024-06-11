@@ -2,22 +2,23 @@ import {
   GENERAL_COMMENTS_FILE,
   INLINE_COMMENTS_FILE,
   activeEditor,
-  emptyDecoration,
+  emptyDecorations,
   highlight,
   highlightDecoration,
   icon,
   iconDecoration,
 } from "../extension";
 import { GeneralComment, InlineComment } from "../comment";
-import { Position, Range, window } from "vscode";
+import { Position, Range } from "vscode";
 import { getFilePath, getRelativePath, readFromFile } from "./file-utils";
 
 /**
- * Get comments for a specific file.
+ * Gets inline comments in a specific file.
  * @param {string} filePath - Relative path of the file.
- * @returns {Promise<InlineComment[]>} - An array of InlineComment objects.
+ * @returns {Promise<InlineComment[]>} - The InlineComment objects in the file.
+ * @throws {unknown}
  */
-export async function getFileComments(
+export async function getInlineComments(
   filePath: string
 ): Promise<InlineComment[]> {
   if (!activeEditor) {
@@ -38,14 +39,14 @@ export async function getFileComments(
 }
 
 /**
- * Adds highlight and icon for comments.
- * @param {string} filePath - Path of active file.
+ * Adds highlight and icon for inline comments.
+ * @param {string} filePath - The path of active file.
  */
-export async function showComments(filePath: string) {
-  emptyDecoration(); // Empty arrays to avoid duplicate decoration when adding a new comment
+export async function showInlineComments(filePath: string) {
+  emptyDecorations(); // Empty arrays to avoid duplicate decoration when adding a new inline comment
 
   try {
-    const fileComments = await getFileComments(filePath);
+    const fileComments = await getInlineComments(filePath);
     fileComments.forEach((comment: InlineComment) => {
       const { start, end } = comment;
       const startPos = new Position(start.line - 1, start.character - 1);
@@ -62,16 +63,16 @@ export async function showComments(filePath: string) {
     activeEditor.setDecorations(icon, iconDecoration);
     activeEditor.setDecorations(highlight, highlightDecoration);
   } catch (error) {
-    console.error(`Error showing comments: ${error}`);
+    console.error(`Error showing inline comments: ${error}`);
   }
 }
 
 /**
- * Gets a comment based on clicked range or ID
+ * Gets an inline comment based on clicked range or ID.
  * @param {Range | number} input - Range of clicked comment or ID of comment.
  * @returns {Promise<InlineComment | undefined>} - A promise that resolves to the retrieved comment or undefined if not found.
  */
-export async function getComment(
+export async function getInlineComment(
   input: Range | number
 ): Promise<InlineComment | undefined> {
   const filePath = getFilePath(INLINE_COMMENTS_FILE);
@@ -79,7 +80,7 @@ export async function getComment(
   const allComments = fileData.inlineComments;
   let comment: InlineComment | undefined;
 
-  // Finds comment in JSON based on the clicked range
+  // Finds inline comment in JSON based on the clicked range
   if (input instanceof Range) {
     const range = input;
     comment = allComments.find(
@@ -98,8 +99,8 @@ export async function getComment(
 }
 
 /**
- * Gets all general comments saved in the JSON file
- * @returns {Promise<GeneralComment[]>} The saved comments
+ * Gets all general comments saved in the JSON file.
+ * @returns {Promise<GeneralComment[]>} - The saved comments in the JSON file.
  */
 export async function getGeneralComments(): Promise<GeneralComment[]> {
   const fileData = await readFromFile(getFilePath(GENERAL_COMMENTS_FILE));
@@ -108,11 +109,11 @@ export async function getGeneralComments(): Promise<GeneralComment[]> {
 }
 
 /**
- * Gets the general comment associated with a specified rubric
- * @param {Number} rubricId The id of the rubric
- * @returns {Promise<GeneralComment | undefined>} The general comment for the specified rubric, or undefined if no such comment exists
+ * Gets the general comment associated with a specified rubric.
+ * @param {Number} rubricId - The id of the rubric.
+ * @returns {Promise<GeneralComment | undefined>} - The general comment for the specified rubric or undefined if no such comment exists.
  */
-export async function getCommentFromRubric(
+export async function getGeneralComment(
   rubricId: Number
 ): Promise<GeneralComment | undefined> {
   const savedComments = await getGeneralComments();
@@ -127,9 +128,9 @@ export async function getCommentFromRubric(
 }
 
 /**
- * Converts a list of objects with the attributes comment, score and rubricId to a list of GeneralComment objects
- * @param {{ comment: string; score?: number; rubricId: number }[]} generalComments The list of objects to convert
- * @returns {GeneralComment[]} A list of GeneralComment objects
+ * Converts a list of objects with the attributes comment, score, and rubricId to a list of GeneralComment objects.
+ * @param {{ comment: string; score?: number; rubricId: number }[]} generalComments - The list of objects to convert.
+ * @returns {GeneralComment[]} - A list of GeneralComment objects.
  */
 export function convertToGeneralComment(
   generalComments: { comment: string; score?: number; rubricId: number }[]
@@ -152,9 +153,9 @@ export function convertToGeneralComment(
 }
 
 /**
- * Converts a list of GeneralComment objects to a list of objects with the attributes comment, score and rubridId
- * @param {GeneralComment[]} generalComments The list of GeneralComment objects to convert
- * @returns {{ comment: string; score?: number; rubricId: number }[]} A list of objects with the attributes comment, score and rubricId
+ * Converts a list of GeneralComment objects to a list of objects with the attributes comment, score, and rubridId.
+ * @param {GeneralComment[]} generalComments - The list of GeneralComment objects to convert.
+ * @returns {{ comment: string; score?: number; rubricId: number }[]} - A list of objects with the attributes comment, score and rubricId.
  */
 export function convertFromGeneralComment(
   generalComments: GeneralComment[]

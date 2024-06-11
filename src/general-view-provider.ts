@@ -12,7 +12,7 @@ import { getFilePath, readFromFile } from "./utils/file-utils";
 import { GENERAL_COMMENTS_FILE } from "./extension";
 
 export class GeneralViewProvider implements WebviewViewProvider {
-  public static readonly viewType = "collabrate-general";
+  public static readonly viewType = "reviewify-general";
   private _view?: WebviewView;
   private _extensionUri: Uri;
   private displayRubrics: boolean;
@@ -26,6 +26,10 @@ export class GeneralViewProvider implements WebviewViewProvider {
     return this._view;
   }
 
+  /**
+   * Sets the visibility of the rubrics.
+   * @param {boolean} shouldDisplay - True if the rubrics should be visible, false if not.
+   */
   public setDisplayRubrics(shouldDisplay: boolean) {
     if (shouldDisplay !== this.displayRubrics) {
       this.displayRubrics = shouldDisplay;
@@ -37,6 +41,12 @@ export class GeneralViewProvider implements WebviewViewProvider {
     return this.displayRubrics;
   }
 
+  /**
+   * Resolves and sets up the webview view, loading necessary HTML and CSS resources.
+   * @param {WebviewView} webviewView - The webview view to be resolved.
+   * @param {WebviewViewResolveContext} context - The context in which the webview view is being resolved.
+   * @param {CancellationToken} _token - A token to monitor for cancellation requests.
+   */
   public async resolveWebviewView(
     webviewView: WebviewView,
     context: WebviewViewResolveContext,
@@ -75,7 +85,7 @@ export class GeneralViewProvider implements WebviewViewProvider {
 
       let rubricHtml = await this.loadHtml(rubricsJson);
 
-      //Sets the CSS and load the HTML for the rubrics into the webview view
+      //Sets the CSS and loads the HTML for the rubrics into the webview view
       let htmlContent = data
         .replace("${cssPath}", cssUri.toString())
         .replace("${rubrics}", rubricHtml)
@@ -89,9 +99,9 @@ export class GeneralViewProvider implements WebviewViewProvider {
   }
 
   /**
-   * Creates the HTML for the rubrics associated with the general comments.
-   * @param {any} rubrics The list of rubric objects.
-   * @returns {Promise<string>} The HTML for the rubrics.
+   * Creates the HTML for the rubrics.
+   * @param {any} rubrics - The list of rubric objects to create.
+   * @returns {Promise<string>} - The HTML for the rubrics.
    */
   private async loadHtml(rubrics: any): Promise<string> {
     let content = "";

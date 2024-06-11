@@ -4,20 +4,20 @@ import {
   GENERAL_COMMENTS_FILE,
   INLINE_COMMENTS_FILE,
   activeEditor,
-  deactivate,
+  disposePanel,
   treeDataProvider,
 } from "../extension";
 import { GeneralComment, InlineComment } from "../comment";
 import { Selection, Uri, window, workspace } from "vscode";
-import { convertToGeneralComment, getCommentFromRubric } from "./comment-utils";
+import { convertToGeneralComment, getGeneralComment } from "./comment-utils";
 
 import path from "path";
 import { GeneralViewProvider } from "../general-view-provider";
 
 /**
- * Reads contents of a given JSON file
+ * Reads content of a given JSON file.
  * @param {string} filePath - The path to the JSON file.
- * @returns {Promise<any>} The contents of the JSON file as a JavaScript object.
+ * @returns {Promise<any>} - The content of the JSON file as a JavaScript object.
  */
 export async function readFromFile(filePath: string): Promise<any> {
   try {
@@ -30,14 +30,14 @@ export async function readFromFile(filePath: string): Promise<any> {
 }
 
 /**
- * Saves a new inline comment in the JSON file
+ * Saves a new inline comment in the INLINE_COMMENTS_FILE.
  * @param {string} fileName - The name of the file.
  * @param {Selection} selection - The highlighted code lines.
- * @param {string} title - The title of the comment.
- * @param {string} commentText - The text of the comment.
- * @param {number} priority - The priority of the comment.
+ * @param {string} title - The title of the inline comment.
+ * @param {string} commentText - The text of the inline comment.
+ * @param {number} priority - The priority of the inline comment.
  */
-export async function saveComment(
+export async function saveInlineComment(
   fileName: string,
   selection: Selection,
   title: string,
@@ -76,12 +76,12 @@ export async function saveComment(
       const commentsJson = JSON.stringify(updatedData);
 
       await fs.promises.writeFile(jsonFilePath, commentsJson);
-      window.showInformationMessage("Comment successfully added.");
+      window.showInformationMessage("Inline comment successfully added.");
       treeDataProvider.refresh();
-      deactivate();
+      disposePanel();
     } else {
       window.showInformationMessage(
-        "Please enter either a title or a comment."
+        "Please enter either a title or a comment text."
       );
     }
   } catch (error: any) {
@@ -91,15 +91,15 @@ export async function saveComment(
 }
 
 /**
- * Updates a comment with new content and title.
- * @param {number} id - ID of the comment to be updated.
- * @param {string} comment - New comment text.
- * @param {string} title - New title for the comment.
- * @param {number} priority - New priority for the comment.
+ * Updates an inline comment in the INLINE_COMMENTS_FILE with new comment text, title, and/or priority.
+ * @param {number} id - The ID of the comment to be updated.
+ * @param {string} commentText - The new comment text.
+ * @param {string} title - The new title for the comment.
+ * @param {number} priority - The new priority for the comment.
  */
 export async function updateComment(
   id: number,
-  comment: string,
+  commentText: string,
   title: string,
   priority?: number
 ) {
@@ -114,24 +114,24 @@ export async function updateComment(
 
     if (commentIndex !== -1) {
       const existingComment = existingComments[commentIndex];
-      // Only update if comment, title or priority has changed. Both title and comment cannot be empty
+      // Only update if comment text, title or priority has changed. Both title and comment text cannot be empty.
       if (
-        (comment.trim() || title.trim()) &&
-        (existingComment.comment !== comment ||
+        (commentText.trim() || title.trim()) &&
+        (existingComment.comment !== commentText ||
           existingComment.title !== title ||
           existingComment.priority !== priority)
       ) {
-        existingComment.comment = comment;
+        existingComment.comment = commentText;
         existingComment.title = title;
         existingComment.priority = priority;
         const updatedData = { inlineComments: existingComments };
         fs.promises.writeFile(jsonFilePath, JSON.stringify(updatedData));
         treeDataProvider.refresh();
-        deactivate();
-        window.showInformationMessage("Comment successfully updated.");
+        disposePanel();
+        window.showInformationMessage("Inline comment successfully updated.");
       } else {
         window.showInformationMessage(
-          "Either no changes detected, or missing title or comment."
+          "Either no changes detected, or missing title or comment text."
         );
       }
     }
@@ -142,10 +142,10 @@ export async function updateComment(
 }
 
 /**
- * Deletes a comment by its ID.
- * @param {number} id - ID of the comment to be deleted.
+ * Deletes an inline comment from the INLINE_COMMENTS_FILE by its ID.
+ * @param {number} id - The ID of the comment to be deleted.
  */
-export function deleteComment(id: number) {
+export function deleteInlineComment(id: number) {
   const jsonFilePath = getFilePath(INLINE_COMMENTS_FILE);
 
   if (!jsonFilePath) {
@@ -156,7 +156,7 @@ export function deleteComment(id: number) {
   try {
     window
       .showWarningMessage(
-        "Are you sure you want to delete this comment? This cannot be undone.",
+        "Are you sure you want to delete this inline comment? This cannot be undone.",
         ...["Yes", "No"]
       )
       .then(async (answer) => {
@@ -174,19 +174,19 @@ export function deleteComment(id: number) {
             treeDataProvider.refresh();
           }
 
-          deactivate();
-          window.showInformationMessage("Comment successfully deleted.");
+          disposePanel();
+          window.showInformationMessage("Inline comment successfully deleted.");
         }
       });
   } catch (error) {
-    window.showErrorMessage(`Error deleting from file: ${error}`);
+    window.showErrorMessage(`Error deleting inline comment from file: ${error}`);
     return;
   }
 }
 
 /**
- * Saves a list of general comments in general-comments.json
- * @param {{ comment: string; score?: number; rubricId: number }[]} generalComments The comments to save.
+ * Saves a list of general comments in the GENERAL_COMMENTS_FILE.
+ * @param {{ comment: string; score?: number; rubricId: number }[]} generalComments - The general comments to save.
  */
 async function saveGeneralComments(
   generalComments: { comment: string; score?: number; rubricId: number }[]
@@ -199,14 +199,14 @@ async function saveGeneralComments(
     const generalCommentsJson = JSON.stringify(updatedData);
     await fs.promises.writeFile(jsonFilePath, generalCommentsJson);
   } catch (error: any) {
-    window.showErrorMessage(`Error saving to file: ${error.message}`);
+    window.showErrorMessage(`Error saving general comments to file: ${error.message}`);
     return;
   }
 }
 
 /**
- * Saves a new draft of general comments in a JSON file
- * @param {{ comment: string; score?: number; rubricId: number }[]} generalComments The comments to save.
+ * Saves a new draft of general comments in the GENERAL_COMMENTS_FILE.
+ * @param {{ comment: string; score?: number; rubricId: number }[]} generalComments - The general comments to save as draft.
  */
 export async function saveDraft(
   generalComments: { comment: string; score?: number; rubricId: number }[]
@@ -215,9 +215,9 @@ export async function saveDraft(
 }
 
 /**
- * Submits the entire review with all inline and general comments
- * @param {{ comment: string; score?: number; rubricId: number }[]} generalComments The comments to submit.
- * @param {GeneralViewProvider} generalViewProvider The provider of the webview view for general comments.
+ * Submits the entire review with all inline and general comments.
+ * @param {{ comment: string; score?: number; rubricId: number }[]} generalComments - The general comments to submit.
+ * @param {GeneralViewProvider} generalViewProvider - The provider of the webview view for general comments.
  */
 export async function submitReview(
   generalComments: { comment: string; score?: number; rubricId: number }[], generalViewProvider: GeneralViewProvider
@@ -230,11 +230,11 @@ export async function submitReview(
     await Promise.all(
       rubrics.map(async (rubric: any) => {
         let rubricId = Number(rubric.id);
-        const comment = await getCommentFromRubric(rubricId);
+        const comment = await getGeneralComment(rubricId);
         if (comment === undefined) {
           emptyRubric = true;
           window.showErrorMessage(
-            "You have not written a comment and/or given a score for some of the general comment rubrics. To fill in these, select the CollabRate icon in the activity bar on the far left."
+            "You have not written a comment and/or given a score for some of the general comment rubrics. To fill in these, select the Reviewify icon in the activity bar on the far left."
           );
         }
       })
@@ -248,8 +248,9 @@ export async function submitReview(
         )
         .then(async (answer) => {
           if (answer === "Yes") {
+            // TODO: Add logic for submitting both inline and general comments
             generalViewProvider.setDisplayRubrics(false);
-            deactivate();
+            disposePanel();
             window.showInformationMessage("Review successfully submitted.");
           }
         });
@@ -261,8 +262,9 @@ export async function submitReview(
 }
 
 /**
- * Get URi of the working directory in the editor that runs the extension
- * @returns {Uri} The URI of the workspace folder.
+ * Gets the URI of the working directory in the editor that runs the extension.
+ * @returns {Uri} - The URI of the workspace folder.
+ * @throws {ErrorConstructor}
  */
 export function getWorkspaceFolderUri(): Uri {
   const workspaceFolder = workspace.workspaceFolders?.[0];
@@ -273,8 +275,8 @@ export function getWorkspaceFolderUri(): Uri {
 }
 
 /**
- * Gets the relative path of the active file in the workspace
- * @returns {string} Relative path.
+ * Gets the relative path of the active file in the workspace.
+ * @returns {string} - The relative path of the active file.
  */
 export function getRelativePath(): string {
   const absoluteFilePath = activeEditor.document.fileName;
@@ -283,18 +285,19 @@ export function getRelativePath(): string {
 }
 
 /**
- * Gets absolute path of a file within the workspace by its file name
- * @param {string} fileName - Name of the file.
- * @returns {string} Absolute path.
+ * Gets the absolute path of a file within the workspace by its file name.
+ * @param {string} fileName - The name of the file.
+ * @returns {string} - The absolute path of the file.
  */
 export function getFilePath(fileName: string): string {
   return path.join(getWorkspaceFolderUri().fsPath, fileName);
 }
 
 /**
- * Checks if file exists, makes it it if doesn't
- * @param {string} filePath - Relative path of file.
- * @param {string} arrayName - Name of initial array in JSON file.
+ * Checks if a file exists, makes it if it does not
+ * @param {string} filePath - The relative path of a file.
+ * @param {string} arrayName - The name of the array in a JSON file.
+ * @returns {boolean} - Returns true if the file exists, false if it was created.
  */
 export function checkIfFileExists(
   filePath: string,
