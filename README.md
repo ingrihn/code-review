@@ -1,70 +1,80 @@
 # ✏️ Reviewify
 
-Reviewify is a Visual Studio Code extension that enables users to perform code reviews by writing inline and general comments directly in the editor. By co-locating these functions, we streamline the feedback process and provide a seamless experience.
+Reviewify is a Visual Studio Code extension that enables users to perform code reviews by writing inline and general comments directly in the editor.
 
-## Startup
+## Table of Contents
+- [Inline Comments](#inline-comments)
+  - [Add a New Inline Comment](#add-a-new-inline-comment)
+  - [Editing Inline Comments](#editing-inline-comments)
+    - [Update Inline Comment](#update-inline-comment)
+    - [Delete Inline Comment](#delete-inline-comment)
+  - [Overview of All Inline Comments](#overview-of-all-inline-comments)
+- [General Comments](#general-comments)
+- [Submit Review](#submit-review)
 
-1. Download the repository.
-2. Open the folder in Visual Studio Code.
-3. Start the extension by pressing _F5_ or clicking on the _Run Extension_ button.
 
-This will open a new editor where you can select the project you wish to review.
+## Inline Comments
 
-## Inline comments
+Inline comments are helpful for directly linking your comment with the relevant lines of code. The corresponding code line(s) will receive a purple background and feature a small comment icon at the end.
 
-Inline comments are helpuful for directly linking your comment with the relevant lines of code.
+### Add A New Inline Comment
 
 1. Highlight the code line(s) you want to comment on.
 2. Right-click and select _✏️ Reviewify: Add Inline Comment_.
-3. A webview panel will appear to the right. Insert a title and a comment.
-4. Click on _Save_ when you are satisfied.
+<img width="1002" alt="reviewfy_add_inline_comment" src="https://github.com/ingrihn/code-review/assets/54809082/d431705c-5657-4895-8b48-793a50b3ef7b">
 
-![Skjermbilde 2024-04-11 kl  14 13 57](https://github.com/ingrihn/code-review/assets/54781143/34ef783b-353d-471d-b416-297106c69380)
+3. A panel will appear to the right. Insert a title and a comment.
+<img width="1147" alt="reviewify_webview_panel1" src="https://github.com/ingrihn/code-review/assets/54809082/8965d9a0-9feb-488a-95bd-6a6495e9f7d0">
 
-![Skjermbilde 2024-04-11 kl  14 16 00](https://github.com/ingrihn/code-review/assets/54781143/03fabd59-e196-4e38-bbe5-7e47958e9315)
+4. Click on the _Save_ button (red circle in the picture) on the right when you are satisfied.
+<img width="1144" alt="reviewify_panel2" src="https://github.com/ingrihn/code-review/assets/54809082/9d4ce3bc-09b1-48a3-8e96-51fe9b0c2b8a">
 
-The corresponding code line(s) will receive a teal background and feature a small comment icon at the end. All inline comments are stored in `inline-comments.json`.
-
-### Editing inline comments (update and delete)
-
-Click within the highlighted range, and the webview panel will open to the right, displaying the title and comment. Edit or delete the comment as needed. The file will be updated accordingly.
+This is how it will look in the editor when the inline comment is added.
+<img width="1140" alt="reviewify_inline_comment_sucessfully_added" src="https://github.com/ingrihn/code-review/assets/54809082/00794375-0d64-4a7c-a43a-48d522936a73">
 
 
-### Overview of all inline comments
+### Editing Inline Comments
 
-All inline comments are conveniently listed in one place for easier management.
+Click on the purple background to open the panel to the right with the comment and view the options of updating or deleting the comment.
 
-1. Click on _Reviewify_ (comment icon) in the Activity Bar. A tree view will open to the bottom left and the inline comments will be grouped by file under _Inline comments_.
-2. Click on a comment to open the corresponding file and navigate to the comment. The comment will also be shown in the webview panel to the right.
+#### Update Inline Comment
+Edit the comment as desired. Click on _Save_ (red circle in the picture):
+<img width="1143" alt="reviewify_update_inline_comment" src="https://github.com/ingrihn/code-review/assets/54809082/63b6ca47-d1d8-443d-aee6-21f6cead2a7d">
 
-![Skjermbilde 2024-04-16 kl  10 13 45](https://github.com/ingrihn/code-review/assets/54781143/af69a258-2a07-467c-9726-5366bd812d39)
+The comment will be updated accordingly.
+<img width="1143" alt="reviewify_sucessful_update" src="https://github.com/ingrihn/code-review/assets/54809082/48aa744e-c457-4cea-9644-960d9e0fa5ba">
+
+#### Delete Inline Comment
+Click on _Delete_ (red circle). Confirm your choice by clicking on _Yes_ (blue circle).
+<img width="1140" alt="reviewify_delete_comment" src="https://github.com/ingrihn/code-review/assets/54809082/84fe9fd6-afa9-475b-be19-b436fcc5b644">
+
+The comment will be removed from the editor.
+<img width="1144" alt="reviewify_delete_sucessful" src="https://github.com/ingrihn/code-review/assets/54809082/2d8098fa-61a9-400d-bc2f-69355c59b8b2">
+
+### Overview of All Inline Comments
+All inline comments are conveniently listed in one place for easier management. They are sorted by file and in descending priority order.
+
+1. Either click on an inline comment or add new one to show the panel on the right.
+2. Click on _Show all inline comments_ button (red circle).
+<img width="1143" alt="reviewify_show_all_inline_comments" src="https://github.com/ingrihn/code-review/assets/54809082/57ef28d7-ed26-422e-b4e0-4cdd50b75b05">
+
+3. A new tab will open at the bottom of the page. Click on one of the entries to open all of the comments fo that file.
+<img width="1115" alt="reviewify_overview_inline_comments" src="https://github.com/ingrihn/code-review/assets/54809082/b48f9d95-5802-41a4-bb01-b8b25c6e0454">
 
 
-## General comments
+4. Click on one of the comments to show it in the panel. Make changes if desired.
 
-To address issues that touch upon several files/themes, users can add general comments based on pre-defined rubrics. Click on _Reviewify_ (comment icon) in the Activity Bar to open the webview view on the left under _General comments_.
+## General Comments
+To address issues that touch upon several files and themes, users can add general comments based on rubrics defined by instructors. Ensure that the `rubrics.json` is at the root level so that the extension can automatically display them.
 
-![Skjermbilde 2024-04-16 kl  10 06 31](https://github.com/ingrihn/code-review/assets/54781143/d31a0dfc-d7b1-4740-b23b-99f653de9742)
+1. Click on the _Reviewify_ icon to the left (red circle).
+<img width="1216" alt="reviewify_icon_activity_bar" src="https://github.com/ingrihn/code-review/assets/54809082/2471b012-72f5-4f21-9d55-5f768a785e37">
 
-Each rubric includes a prompt that users can answer with text and an optional Likert-score. The rubrics are retrieved from the file `rubrics.json`. This file must be updated with the desired rubrics before the user can fill in general comments. These rubrics must be written in the following format in `rubrics.json`:
+2. Write a comment for each rubric. Add a score if desired. Both will be saved continuously. 
+<img width="1150" alt="revieiwfy_insert_gneral_comment" src="https://github.com/ingrihn/code-review/assets/54809082/7c59aeb8-de99-4c3f-8c49-eff8f7d6b4ca">
 
-```
-{
-    "rubrics": [
-        {
-            "id": 1,
-            "title": "How would you assess the code quality of the project?",
-            "description": "Here you can consider criteria such as readability, maintainability, efficiency, and adherence to best practices.",
-            "has_score": "true"
-        },
-        {
-            "id": 2,
-            "title": "How would you assess the software architecture?",
-            "description": "Here you can consider criteria such as scalability, modularity, flexibility, and adherence to architectural principles.",
-            "has_score": "false"
-        }
-    ]
-} 
-```
+## Submit Review
 
-To save what you have written so far, scroll to the bottom of the _General comments_ tab and click on _Save as draft._ Your comments will then be stored in `general-comments.json`. Note that only one draft can be saved at a time; any new drafts will overwrite the previous one. If you wish to complete your review, click on `Submit review`.
+Once finished, the user can submit the score. Click on _Submit review_ from the general comments or at the bottom of the status bar.
+
+<img width="1016" alt="reviewify_submit_review" src="https://github.com/ingrihn/code-review/assets/54809082/a7ce52b8-8822-4508-b3a8-8c2710c99ef2">
