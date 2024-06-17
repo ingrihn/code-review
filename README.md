@@ -70,11 +70,12 @@ To address issues that touch upon several files and themes, users can add genera
 1. Click on the _Reviewify_ icon to the left (red circle).
 <img width="1216" alt="reviewify_icon_activity_bar" src="https://github.com/ingrihn/code-review/assets/54809082/2471b012-72f5-4f21-9d55-5f768a785e37">
 
-2. Write a comment for each rubric. Add a score if desired. Both will be saved continuously. 
-<img width="1150" alt="revieiwfy_insert_gneral_comment" src="https://github.com/ingrihn/code-review/assets/54809082/7c59aeb8-de99-4c3f-8c49-eff8f7d6b4ca">
+2. Write a comment for each rubric. Add a score if desired. Both will be saved continuously.
+<img width="1171" alt="Screenshot 2024-06-17 at 14 49 11" src="https://github.com/ingrihn/code-review/assets/54809082/0d165e55-b8e7-4211-b961-e7498eac0110">
+
 
 ## Submit Review
 
 Once finished, the user can submit the score. Click on _Submit review_ from the general comments view or in the status bar at the bottom.
 
-<img width="1016" alt="reviewify_submit_review" src="https://github.com/ingrihn/code-review/assets/54809082/a7ce52b8-8822-4508-b3a8-8c2710c99ef2">
+<img width="1178" alt="Screenshot 2024-06-17 at 14 50 26" src="https://github.com/ingrihn/code-review/assets/54809082/502fe70f-7d44-4959-b38b-903db8f510e0">
