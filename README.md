@@ -46,13 +46,13 @@ Click on the _Delete_ button (red circle). Confirm your choice by clicking on _Y
 <img width="1140" alt="reviewify_delete_comment" src="https://github.com/ingrihn/code-review/assets/54809082/84fe9fd6-afa9-475b-be19-b436fcc5b644">
 
 ### Overview of All Inline Comments
-All inline comments are conveniently listed in one place for easier management. This overview automatically appears at the bottom of the screen, in the terminal under the tab labeled _Inline comments_. Comments are sorted by file and in descending priority order. Clicking on a file name will show all comments related to that file. Furthermore, clicking on any comment navigates to its location in the code and displays its values in the panel. 
+All inline comments are conveniently listed in one place for easier management. This overview automatically appears in the panel at the bottom of the screen when the extension is activated, under the tab labeled _Inline comments_. Comments are sorted by file and in descending priority order. Clicking on a file name will show all comments related to that file. Furthermore, clicking on any comment navigates to its location in the code and displays its values in the panel on the right. 
 
-The terminal can be minimised if desired. To reopen it, you can either click on _Terminal -> New Terminal_ or navigate through an inline comment:
+The overview can be minimised if desired. To reopen it, you can either click on _Terminal -> New Terminal_ and select the _Inline comments_ tab or navigate through an inline comment:
 
 1. Click on an inline comment or add a new one to show the panel on the right.
 2. Click on the _Show all inline comments_ button (red circle).
-3. The Terminal, including the _Inline comments_ tab, will show up.
+3. The panel at the bottom, including the _Inline comments_ tab, will show up.
 <img width="1225" alt="Screenshot 2024-06-17 at 15 38 43" src="https://github.com/ingrihn/code-review/assets/54809082/3e10cce6-3aed-4272-9690-e954bd3ff3ed">
 
 ## General Comments
@@ -64,7 +64,7 @@ To address issues that touch upon several files and themes, users can add genera
 <img width="1171" alt="Screenshot 2024-06-17 at 14 49 11" src="https://github.com/ingrihn/code-review/assets/54809082/79b62528-35e2-4ca9-82dd-0012ddb35c4e">
 
 ## Submit Review
-Once finished, the user can submit the score. Click on _Submit review_ from the general comments view or in the status bar at the bottom (red circle). Confirm by clicking on "Yes" (blue circle).
+Once finished, the user can submit the entire review. Click on _Submit review_ from the general comments view or in the status bar at the bottom (red circle). Confirm by clicking on "Yes" (blue circle).
 
 <img width="1178" alt="Screenshot 2024-06-17 at 14 50 26" src="https://github.com/ingrihn/code-review/assets/54809082/ffed99b3-36a2-49e9-801a-d3e0203093c1">
 
