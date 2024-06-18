@@ -16,11 +16,11 @@ Reviewify is a Visual Studio Code extension that enables users to perform code r
 
 ## Inline Comments
 
-Inline comments are helpful for directly linking your comment with the relevant lines of code. The corresponding code line(s) will receive a purple background and feature a small comment icon at the end.
+Inline comments are helpful for directly linking your comment with the relevant lines of code. The corresponding code line(s) will receive a purple background and feature a small chat bubble at the end.
 
 ### Add a New Inline Comment
 
-1. Highlight the code line(s) you want to comment on.
+1. Highlight the code you want to comment on.
 2. Right-click and select _✏️ Reviewify: Add Inline Comment_.
 <img width="1002" alt="reviewfy_add_inline_comment" src="https://github.com/ingrihn/code-review/assets/54809082/d431705c-5657-4895-8b48-793a50b3ef7b">
 
@@ -35,10 +35,10 @@ This is how it will look in the editor when the inline comment is added.
 
 ### Editing Inline Comments
 
-Click on the purple background to open the panel to the right with the comment and view the options for updating or deleting the comment.
+Click on the purple background indicating an added comment. The panel to the right will display the comment along with options for updating and deleting.
 
 #### Update Inline Comment
-Edit the comment as desired. Click on the _Update_ button (red circle in the picture). The comment will be updated accordingly.
+Edit the comment as desired. Click on the _Update_ button (red circle). The comment will be updated accordingly.
 <img width="1143" alt="reviewify_update_inline_comment" src="https://github.com/ingrihn/code-review/assets/54809082/63b6ca47-d1d8-443d-aee6-21f6cead2a7d">
 
 #### Delete Inline Comment
@@ -46,7 +46,7 @@ Click on the _Delete_ button (red circle). Confirm your choice by clicking on _Y
 <img width="1140" alt="reviewify_delete_comment" src="https://github.com/ingrihn/code-review/assets/54809082/84fe9fd6-afa9-475b-be19-b436fcc5b644">
 
 ### Overview of All Inline Comments
-All inline comments are conveniently listed in one place for easier management. This overview automatically appears in the panel at the bottom of the screen when the extension is activated, under the tab labeled _Inline comments_. Comments are sorted by file and in descending priority order. Clicking on a file name will show all comments related to that file. Furthermore, clicking on any comment navigates to its location in the code and displays its values in the panel on the right. 
+All inline comments are conveniently listed in one place for easier management. This overview automatically appears in the panel at the bottom of the screen when the extension is activated, under the tab labeled _Inline comments_. Comments are sorted by file and in descending priority. Clicking on a file name will show all comments related to that file. Furthermore, clicking on any comment navigates to its location in the code and displays its values in the panel on the right. 
 
 The overview can be minimised if desired. To reopen it, you can either click on _Terminal -> New Terminal_ and select the _Inline comments_ tab or navigate through an inline comment:
 
@@ -56,23 +56,20 @@ The overview can be minimised if desired. To reopen it, you can either click on 
 <img width="1225" alt="Screenshot 2024-06-17 at 15 38 43" src="https://github.com/ingrihn/code-review/assets/54809082/3e10cce6-3aed-4272-9690-e954bd3ff3ed">
 
 ## General Comments
-To address issues that touch upon several files and themes, users can add general comments based on rubrics defined by instructors.
+To address issues that touch upon several files and themes, you can add general comments based on rubrics defined by your instructor.
 
-1. Fill `rubrics.json` with the appropriate rubrics provided by your instructor.
+1. Fill the `rubrics.json` file, located at the root level, with the appropriate rubrics provided by your instructor.
 2. Click on the _Reviewify_ icon to the left (red circle).
 3. Write a comment for each rubric. Add a score if desired. Both will be saved continuously.
 <img width="1171" alt="Screenshot 2024-06-17 at 14 49 11" src="https://github.com/ingrihn/code-review/assets/54809082/79b62528-35e2-4ca9-82dd-0012ddb35c4e">
 
 ## Submit Review
-Once finished, the user can submit the entire review. Click on _Submit review_ from the general comments view or in the status bar at the bottom (red circle). Confirm by clicking on "Yes" (blue circle).
+Once finished, you can submit the entire review. Click on _Submit review_ from the general comments view or in the status bar at the bottom (red circle). Confirm by clicking on "Yes" (blue circle). You will get a message that the code review is submitted.
 
 <img width="1178" alt="Screenshot 2024-06-17 at 14 50 26" src="https://github.com/ingrihn/code-review/assets/54809082/ffed99b3-36a2-49e9-801a-d3e0203093c1">
 
-You will get a message that the code review is submitted.
-<img width="1017" alt="Screenshot 2024-06-17 at 15 21 20" src="https://github.com/ingrihn/code-review/assets/54809082/a782552e-3afe-4e0f-bf37-e2b54ceb26a2">
-
 ## For Instructors: Defining Reviewing Criteria
-As mentioned, instructors must provide the desired rubrics in `rubrics.json` before the user can fill in general comments. Each rubric includes a prompt that users can answer with text and an optional Likert-score. These rubrics must be written in the following format:
+As previously mentioned, instructors must provide the desired rubrics for users to insert into their `rubrics.json` file. Each rubric includes a prompt that users can answer with text and an optional Likert-score. These rubrics must be written in the following format:
 
 ```json
 {
