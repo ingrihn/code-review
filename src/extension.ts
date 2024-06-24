@@ -21,15 +21,15 @@ import {
   deleteInlineComment,
   getFilePath,
   getRelativePath,
-  saveInlineComment,
   saveDraft,
+  saveInlineComment,
   submitReview,
   updateComment,
 } from "./utils/file-utils";
 import {
   convertFromGeneralComment,
-  getInlineComment,
   getGeneralComments,
+  getInlineComment,
   showInlineComments,
 } from "./utils/comment-utils";
 import {
@@ -41,9 +41,9 @@ import {
 
 import { GeneralViewProvider } from "./general-view-provider";
 import { InlineComment } from "./comment";
+import { InlineCommentItem } from "./inline-comment-item";
 import { InlineCommentItemProvider } from "./inline-comment-item-provider";
 import path from "path";
-import { InlineCommentItem } from "./inline-comment-item";
 
 export let activeEditor: TextEditor;
 export let treeDataProvider: InlineCommentItemProvider;
@@ -98,12 +98,12 @@ export async function activate(context: ExtensionContext) {
   // Creates JSON files if they do not already exist
   const inlineCommentsJson = getFilePath(INLINE_COMMENTS_FILE);
   const generalCommentsJson = getFilePath(GENERAL_COMMENTS_FILE);
-  const rubricsJson = getFilePath("rubrics.json");
+  const rubricsJson = getFilePath("review-guidelines.json");
   if (checkIfFileExists(inlineCommentsJson, "inlineComments")) {
     showInlineComments(inlineCommentsJson);
   }
   checkIfFileExists(generalCommentsJson, "generalComments");
-  checkIfFileExists(rubricsJson, "rubrics");
+  checkIfFileExists(rubricsJson, "reviewGuidelines");
 
   // Registers provider for the webview view and shows it every time it is opened
   context.subscriptions.push(
@@ -273,7 +273,9 @@ export async function activate(context: ExtensionContext) {
           submitReview(commentsToSave, generalViewProvider);
         }
       } else {
-        window.showInformationMessage("You have already submitted your review.");
+        window.showInformationMessage(
+          "You have already submitted your review."
+        );
       }
     })
   );
@@ -357,8 +359,7 @@ async function initialiseWebviewPanel(context: ExtensionContext) {
     .toString();
 
   try {
-    const html = await fs.promises
-      .readFile(webviewPath.fsPath, "utf-8");
+    const html = await fs.promises.readFile(webviewPath.fsPath, "utf-8");
     webviewPanelHtml = html
       .replace("${cssUri}", cssUri.toString())
       .replace("${lowPriorityIconUri}", webviewLowPriorityIcon)

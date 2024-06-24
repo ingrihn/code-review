@@ -80,7 +80,7 @@ export class GeneralViewProvider implements WebviewViewProvider {
     try {
       const [data, rubricsJson] = await Promise.all([
         fs.promises.readFile(htmlFilePath.fsPath, "utf-8"),
-        readFromFile(getFilePath("rubrics.json")),
+        readFromFile(getFilePath("review-guidelines.json")),
       ]);
 
       let rubricHtml = await this.loadHtml(rubricsJson);
@@ -108,9 +108,9 @@ export class GeneralViewProvider implements WebviewViewProvider {
     const fileData = await readFromFile(getFilePath(GENERAL_COMMENTS_FILE));
     const savedComments = fileData.generalComments;
 
-    rubrics.rubrics = Array.from(rubrics.rubrics);
+    rubrics.reviewGuidelines = Array.from(rubrics.reviewGuidelines);
 
-    rubrics.rubrics.forEach((rubric: any) => {
+    rubrics.reviewGuidelines.forEach((rubric: any) => {
       let rubricId = Number(rubric.id);
       let commentText = "";
       let score = undefined;

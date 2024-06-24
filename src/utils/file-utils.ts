@@ -11,8 +11,8 @@ import { GeneralComment, InlineComment } from "../comment";
 import { Selection, Uri, window, workspace } from "vscode";
 import { convertToGeneralComment, getGeneralComment } from "./comment-utils";
 
-import path from "path";
 import { GeneralViewProvider } from "../general-view-provider";
+import path from "path";
 
 /**
  * Reads content of a given JSON file.
@@ -179,7 +179,9 @@ export function deleteInlineComment(id: number) {
         }
       });
   } catch (error) {
-    window.showErrorMessage(`Error deleting inline comment from file: ${error}`);
+    window.showErrorMessage(
+      `Error deleting inline comment from file: ${error}`
+    );
     return;
   }
 }
@@ -199,7 +201,9 @@ async function saveGeneralComments(
     const generalCommentsJson = JSON.stringify(updatedData);
     await fs.promises.writeFile(jsonFilePath, generalCommentsJson);
   } catch (error: any) {
-    window.showErrorMessage(`Error saving general comments to file: ${error.message}`);
+    window.showErrorMessage(
+      `Error saving general comments to file: ${error.message}`
+    );
     return;
   }
 }
@@ -220,12 +224,15 @@ export async function saveDraft(
  * @param {GeneralViewProvider} generalViewProvider - The provider of the webview view for general comments.
  */
 export async function submitReview(
-  generalComments: { comment: string; score?: number; rubricId: number }[], generalViewProvider: GeneralViewProvider
+  generalComments: { comment: string; score?: number; rubricId: number }[],
+  generalViewProvider: GeneralViewProvider
 ) {
   try {
     saveGeneralComments(generalComments);
-    const rubricsData = await readFromFile(getFilePath("rubrics.json"));
-    const rubrics = Array.from(rubricsData.rubrics);
+    const rubricsData = await readFromFile(
+      getFilePath("review-guidelines.json")
+    );
+    const rubrics = Array.from(rubricsData.reviewGuidelines);
     let emptyRubric = false;
     await Promise.all(
       rubrics.map(async (rubric: any) => {
